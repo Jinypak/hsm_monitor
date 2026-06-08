@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.yours.hsm.ui.KeyManagementController"
+      spacing="0" styleClass="tab-content">
+
+    <!-- 키 생성 -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+        <Label text="키 생성" styleClass="section-title"/>
+
+        <GridPane hgap="10" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="80" prefWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+                <ColumnConstraints minWidth="80" prefWidth="100"/>
+                <ColumnConstraints minWidth="120"/>
+            </columnConstraints>
+
+            <Label text="알고리즘" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="algoCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="키 길이" styleClass="form-label" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="sizeCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+
+            <Label text="라벨 (alias)" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <TextField fx:id="newAliasField" promptText="생성할 키의 라벨..." styleClass="dark-field"
+                       GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.columnSpan="3"/>
+        </GridPane>
+
+        <HBox spacing="8">
+            <Button fx:id="generateBtn" text="키 생성" styleClass="btn-primary" onAction="#onGenerate"/>
+        </HBox>
+    </VBox>
+
+    <!-- 키 목록 -->
+    <VBox VBox.vgrow="ALWAYS" spacing="6">
+        <padding><Insets top="10" right="14" bottom="6" left="14"/></padding>
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <Label text="토큰 키 목록" styleClass="section-title"/>
+            <Label fx:id="keyCountLabel" text="" styleClass="muted-label"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="refreshBtn"   text="새로고침"      styleClass="btn-secondary" onAction="#onRefresh"/>
+            <Button fx:id="exportPubBtn" text="공개키 내보내기" styleClass="btn-secondary" onAction="#onExportPublicKey" disable="true"/>
+            <Button fx:id="relabelBtn"   text="라벨 변경"     styleClass="btn-accent"    onAction="#onRelabel"  disable="true"/>
+            <Button fx:id="deleteBtn"    text="삭제"          styleClass="btn-danger"    onAction="#onDelete"   disable="true"/>
+        </HBox>
+
+        <TableView fx:id="keyTable" VBox.vgrow="ALWAYS" styleClass="key-table">
+            <columns>
+                <TableColumn fx:id="aliasCol" text="라벨(alias)" prefWidth="240"/>
+                <TableColumn fx:id="kindCol"  text="종류"        prefWidth="110"/>
+                <TableColumn fx:id="algoCol"  text="알고리즘"     prefWidth="110"/>
+                <TableColumn fx:id="bitsCol"  text="비트"        prefWidth="80"/>
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
+        </TableView>
+    </VBox>
+
+    <!-- 속성 편집 -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <Label text="속성 (PKCS#11)" styleClass="section-title"/>
+            <Label fx:id="attrTargetLabel" text="— 키를 선택하세요" styleClass="muted-label"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="applyAttrBtn" text="속성 적용" styleClass="btn-primary" onAction="#onApplyAttributes" disable="true"/>
+        </HBox>
+        <FlowPane fx:id="attrPane" hgap="18" vgap="6"/>
+    </VBox>
+
+    <!-- 키 래핑 / 내보내기 -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+        <Label text="키 래핑 / 내보내기 (AES-KWP)" styleClass="section-title"/>
+
+        <GridPane hgap="10" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="100" prefWidth="110"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+
+            <Label text="래핑 키 (AES)" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="wrapKeyCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="래핑 대상" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <Label fx:id="wrapTargetLabel" text="— 위 목록에서 키를 선택하세요" styleClass="muted-label"
+                   GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        </GridPane>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Button fx:id="wrapExportBtn" text="래핑 후 내보내기" styleClass="btn-primary"
+                    onAction="#onWrapAndExport" disable="true"/>
+            <Label fx:id="wrapStatusLabel" text="" styleClass="muted-label"/>
+        </HBox>
+    </VBox>
+
+    <!-- 키 언래핑 / 가져오기 -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+        <Label text="키 언래핑 / 가져오기 (AES-KWP)" styleClass="section-title"/>
+
+        <GridPane hgap="10" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="100" prefWidth="110"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+                <ColumnConstraints minWidth="80"/>
+            </columnConstraints>
+
+            <Label text="언래핑 키 (AES)" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="unwrapKeyCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="2"/>
+
+            <Label text="키 파일 (.key)" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <TextField fx:id="unwrapFileField" promptText="래핑된 .key 파일 경로..." styleClass="dark-field"
+                       GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+            <Button fx:id="chooseFileBtn" text="찾아보기" styleClass="btn-secondary"
+                    onAction="#onChooseFile" maxWidth="Infinity"
+                    GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+
+            <Label text="새 라벨" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <TextField fx:id="unwrapAliasField" promptText="복원할 키의 라벨..." styleClass="dark-field"
+                       GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.columnSpan="2"/>
+        </GridPane>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Button fx:id="unwrapImportBtn" text="언래핑 후 가져오기" styleClass="btn-primary"
+                    onAction="#onUnwrapImport" disable="true"/>
+            <Label fx:id="unwrapStatusLabel" text="" styleClass="muted-label"/>
+        </HBox>
+    </VBox>
+
+</VBox>

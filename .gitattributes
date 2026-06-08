@@ -1,0 +1,19 @@
+# 기본: 플랫폼 줄바꿈 자동 변환
+* text=auto
+
+# 쉘 스크립트는 항상 LF (Windows checkout 해도 LF 유지)
+vision           text eol=lf
+*.sh             text eol=lf
+gradlew          text eol=lf
+
+# Windows 배치 파일은 CRLF
+vision.bat       text eol=crlf
+*.bat            text eol=crlf
+*.cmd            text eol=crlf
+
+# 바이너리
+*.jar            binary
+*.dll            binary
+*.so             binary
+*.png            binary
+*.gif            binary

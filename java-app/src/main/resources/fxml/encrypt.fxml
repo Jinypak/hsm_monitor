@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.yours.hsm.ui.EncryptController"
+      spacing="0" styleClass="tab-content">
+
+    <!-- 설정 -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+        <Label text="암복호화 설정" styleClass="section-title"/>
+
+        <GridPane hgap="10" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="80" prefWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+
+            <Label text="메커니즘" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="mechCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="키" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="keyCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+            <Label text="RSA 키 방향" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <CheckBox fx:id="privKeyEncryptCheck" styleClass="dark-check"
+                      text="개인키로 암호화 ↔ 공개키로 복호화 (기본: 공개키 암호화)"
+                      GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        </GridPane>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Button fx:id="encryptBtn"       text="암호화"        styleClass="btn-primary"   onAction="#onEncrypt"/>
+            <Button fx:id="decryptBtn"       text="복호화"        styleClass="btn-secondary"  onAction="#onDecrypt"/>
+            <Button fx:id="roundtripBtn"     text="라운드트립 검증" styleClass="btn-accent"    onAction="#onRoundtripTest"/>
+            <Label fx:id="roundtripStatus"   text="" styleClass="status-label"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="saveJsonBtn" text="JSON 저장"  styleClass="btn-secondary" onAction="#onSaveJson"/>
+            <Button fx:id="saveCsvBtn"  text="CSV 저장"   styleClass="btn-secondary" onAction="#onSaveCsv"/>
+            <Button fx:id="clearLogBtn" text="로그 지우기" styleClass="btn-secondary" onAction="#onClearLog"/>
+        </HBox>
+    </VBox>
+
+    <!-- 입출력 영역 -->
+    <HBox VBox.vgrow="ALWAYS" spacing="10">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+
+        <VBox HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="평문 (UTF-8 또는 HEX)" styleClass="section-title"/>
+            <TextArea fx:id="plaintextArea"   VBox.vgrow="ALWAYS" styleClass="log-area"
+                      promptText="암호화할 텍스트 입력..." wrapText="true"/>
+        </VBox>
+
+        <VBox HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="암호문 (Base64) — 직접 붙여넣어 복호화 가능" styleClass="section-title"/>
+            <TextArea fx:id="ciphertextArea"  VBox.vgrow="ALWAYS" styleClass="log-area"
+                      promptText="암호화 결과 또는 복호화할 Base64 암호문 입력..." wrapText="true"/>
+        </VBox>
+
+        <VBox HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="복호문" styleClass="section-title"/>
+            <TextArea fx:id="decryptedArea"   VBox.vgrow="ALWAYS" styleClass="log-area"
+                      promptText="복호화 결과..." wrapText="true" editable="false"/>
+        </VBox>
+    </HBox>
+
+</VBox>

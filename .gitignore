@@ -1,0 +1,38 @@
+# Luna JSP 라이브러리 — 라이선스 파일이므로 저장소에 포함하지 않음
+# 설치 경로: gradle.properties 의 lunaClientPath/JSP/lib/LunaProvider.jar
+java-app/libs/*.jar
+
+# Gradle 빌드 산출물
+java-app/build/
+java-app/.gradle/
+java-app/out/
+
+# 로컬 설정 (경로·PIN 등 민감 정보)
+java-app/gradle.properties.local
+local.properties
+
+# IDE
+.vscode/settings.json
+.idea/
+*.iml
+
+# Claude Code 내부
+.claude/
+.claudeignore
+
+# 패키징 산출물
+*.msi
+*.exe
+*.deb
+*.rpm
+
+# 로그
+*.log
+logs/
+
+# 테스트 임시 키 파일
+*.key.tmp
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.yours.hsm.ui.ConnectionController"
+      spacing="0" styleClass="tab-content">
+
+    <!-- 연결 폼 -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+        <Label text="HSM 연결" styleClass="section-title"/>
+
+        <GridPane hgap="10" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="80" prefWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS" maxWidth="160"/>
+            </columnConstraints>
+
+            <Label text="슬롯" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="slotField" styleClass="input" promptText="0"
+                       GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="PIN" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <PasswordField fx:id="pinField" styleClass="input" promptText="HSM PIN"
+                           GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        </GridPane>
+
+        <HBox spacing="8">
+            <Button fx:id="connectBtn"    text="연결"    styleClass="btn-primary"   onAction="#onConnect"/>
+            <Button fx:id="disconnectBtn" text="연결 해제" styleClass="btn-danger"   onAction="#onDisconnect" disable="true"/>
+            <Button fx:id="refreshBtn"    text="새로고침" styleClass="btn-secondary" onAction="#onRefresh"    disable="true"/>
+        </HBox>
+
+        <Label fx:id="connectStatus" text="● 미연결" styleClass="status,status-disconnected"/>
+    </VBox>
+
+    <!-- 키 목록 -->
+    <VBox styleClass="panel" spacing="8" VBox.vgrow="ALWAYS">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+        <Label text="키 목록" styleClass="section-title"/>
+
+        <TableView fx:id="keyTable" VBox.vgrow="ALWAYS" styleClass="dark-table">
+            <columns>
+                <TableColumn fx:id="aliasCol" text="Alias"    prefWidth="220"/>
+                <TableColumn fx:id="kindCol"  text="종류"     prefWidth="80"/>
+                <TableColumn fx:id="algoCol"  text="알고리즘" prefWidth="80"/>
+                <TableColumn fx:id="bitsCol"  text="비트"     prefWidth="60"/>
+            </columns>
+            <placeholder>
+                <Label text="HSM에 연결하면 키 목록이 표시됩니다" styleClass="placeholder"/>
+            </placeholder>
+        </TableView>
+
+        <Label fx:id="keyCountLabel" text="" styleClass="muted-label"/>
+    </VBox>
+
+</VBox>

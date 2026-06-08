@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.yours.hsm.ui.MacDigestController"
+      spacing="0" styleClass="tab-content">
+
+    <!-- 설정 -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+        <Label text="MAC · 해시" styleClass="section-title"/>
+        <Label text="MAC(HMAC/CMAC/GMAC)은 키가 필요하고, 해시(SHA/SHA3/SM3)는 키 없이 동작합니다."
+               styleClass="muted-label" wrapText="true"/>
+
+        <GridPane hgap="10" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="80" prefWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+
+            <Label text="메커니즘" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="mechCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="키 (MAC용)" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <ComboBox fx:id="keyCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        </GridPane>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Button fx:id="computeBtn" text="계산" styleClass="btn-primary" onAction="#onCompute" disable="true"/>
+            <Button fx:id="clearBtn"   text="지우기" styleClass="btn-secondary" onAction="#onClear"/>
+        </HBox>
+    </VBox>
+
+    <!-- 입출력 -->
+    <HBox VBox.vgrow="ALWAYS" spacing="10">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+
+        <VBox HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="입력 (UTF-8)" styleClass="section-title"/>
+            <TextArea fx:id="inputArea" VBox.vgrow="ALWAYS" styleClass="log-area"
+                      promptText="MAC/해시할 텍스트 입력..." wrapText="true"/>
+        </VBox>
+
+        <VBox HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="출력 (HEX)" styleClass="section-title"/>
+            <TextArea fx:id="outputArea" VBox.vgrow="ALWAYS" styleClass="log-area"
+                      promptText="결과 (16진수)..." wrapText="true" editable="false"/>
+            <Label fx:id="infoLabel" text="" styleClass="muted-label"/>
+        </VBox>
+    </HBox>
+
+</VBox>

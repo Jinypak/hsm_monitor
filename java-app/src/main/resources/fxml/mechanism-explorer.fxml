@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.yours.hsm.ui.MechanismExplorerController"
+      spacing="0" styleClass="tab-content">
+
+    <!-- 필터 -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+        <Label text="메커니즘 탐색기" styleClass="section-title"/>
+        <Label text="Luna HSM 카탈로그 전체 — 연결 시 현재 펌웨어/Provider가 실제로 노출하는 메커니즘에 ✅ 표시"
+               styleClass="muted-label" wrapText="true"/>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <TextField fx:id="searchField" promptText="검색 (id / JCE / CKM)..." styleClass="input"
+                       HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+            <Label text="Family" styleClass="form-label"/>
+            <ComboBox fx:id="familyFilter" styleClass="dark-combo" prefWidth="130"/>
+            <Label text="Op" styleClass="form-label"/>
+            <ComboBox fx:id="opFilter" styleClass="dark-combo" prefWidth="130"/>
+            <CheckBox fx:id="availableOnly" text="가용한 것만" styleClass="form-label"/>
+            <Button fx:id="resetBtn" text="초기화" styleClass="btn-secondary" onAction="#onReset"/>
+        </HBox>
+    </VBox>
+
+    <!-- 목록 -->
+    <VBox styleClass="panel" spacing="8" VBox.vgrow="ALWAYS">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+
+        <TableView fx:id="table" VBox.vgrow="ALWAYS" styleClass="dark-table">
+            <columns>
+                <TableColumn fx:id="availCol"  text="가용"   prefWidth="55"/>
+                <TableColumn fx:id="idCol"     text="ID"     prefWidth="180"/>
+                <TableColumn fx:id="familyCol" text="Family" prefWidth="90"/>
+                <TableColumn fx:id="opCol"     text="Op"     prefWidth="90"/>
+                <TableColumn fx:id="jceCol"    text="JCE 이름" prefWidth="240"/>
+                <TableColumn fx:id="ckmCol"    text="CKM"    prefWidth="100"/>
+                <TableColumn fx:id="flagsCol"  text="플래그" prefWidth="120"/>
+            </columns>
+            <placeholder>
+                <Label text="조건에 맞는 메커니즘이 없습니다" styleClass="placeholder"/>
+            </placeholder>
+        </TableView>
+
+        <Label fx:id="countLabel" text="" styleClass="muted-label"/>
+    </VBox>
+
+</VBox>

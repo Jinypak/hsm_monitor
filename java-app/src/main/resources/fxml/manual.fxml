@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.yours.hsm.ui.ManualController"
+      spacing="0" styleClass="tab-content">
+
+    <VBox styleClass="panel" spacing="4">
+        <padding><Insets top="14" right="14" bottom="10" left="14"/></padding>
+        <Label text="사용 매뉴얼" styleClass="section-title"/>
+        <Label text="왼쪽에서 주제를 선택하면 단계별 사용법이 표시됩니다. 실제 탭/버튼 이름 그대로 따라 하세요."
+               styleClass="muted-label" wrapText="true"/>
+    </VBox>
+
+    <HBox VBox.vgrow="ALWAYS" spacing="10">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+
+        <VBox spacing="4" prefWidth="260" minWidth="220">
+            <Label text="주제" styleClass="form-label"/>
+            <ListView fx:id="topicList" VBox.vgrow="ALWAYS" styleClass="dark-table"/>
+        </VBox>
+
+        <VBox HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="내용" styleClass="form-label"/>
+            <TextArea fx:id="contentArea" VBox.vgrow="ALWAYS" styleClass="log-area"
+                      editable="false" wrapText="true"/>
+        </VBox>
+    </HBox>
+
+</VBox>

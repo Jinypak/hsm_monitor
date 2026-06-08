@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.yours.hsm.ui.MainController"
+            styleClass="root-pane">
+
+    <top>
+        <HBox styleClass="header" alignment="CENTER_LEFT">
+            <padding><Insets top="10" right="14" bottom="10" left="14"/></padding>
+            <Label text="HSM Sign/Verify Monitor" styleClass="title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="connectionStatus" text="● 미연결" styleClass="status,status-disconnected"/>
+        </HBox>
+    </top>
+
+    <center>
+        <TabPane fx:id="tabs" tabClosingPolicy="UNAVAILABLE">
+            <tabs>
+                <Tab text="연결"            fx:id="connectionTab">
+                    <fx:include source="connection.fxml" fx:id="connectionContent"/>
+                </Tab>
+                <Tab text="메커니즘 탐색기" fx:id="explorerTab">
+                    <fx:include source="mechanism-explorer.fxml" fx:id="explorerContent"/>
+                </Tab>
+                <Tab text="서명·검증 (RSA)" fx:id="signVerifyTab">
+                    <fx:include source="sign-verify.fxml" fx:id="signVerifyContent"/>
+                </Tab>
+                <Tab text="암복호화" fx:id="encryptTab">
+                    <fx:include source="encrypt.fxml" fx:id="encryptContent"/>
+                </Tab>
+                <Tab text="MAC·해시" fx:id="macDigestTab">
+                    <fx:include source="mac-digest.fxml" fx:id="macDigestContent"/>
+                </Tab>
+                <Tab text="PQC" fx:id="pqcTab">
+                    <fx:include source="pqc.fxml" fx:id="pqcContent"/>
+                </Tab>
+                <Tab text="키 관리" fx:id="keyMgmtTab">
+                    <fx:include source="key-management.fxml" fx:id="keyMgmtContent"/>
+                </Tab>
+                <Tab text="사용 매뉴얼" fx:id="manualTab">
+                    <fx:include source="manual.fxml" fx:id="manualContent"/>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+
+</BorderPane>

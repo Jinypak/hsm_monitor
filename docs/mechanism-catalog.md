@@ -1,0 +1,486 @@
+---
+name: Luna HSM Mechanism Catalog
+source: LunaCM `mechanism list` 덤프
+client_version: Luna Client 10.9.1 (예정)
+firmware_version: TBD
+parsed_at: 2026-04-30
+total_unique: 280
+phase1_scope: [RSA, AES]
+notes:
+  - 0x80000000 이상은 Thales/SafeNet 벤더 확장
+  - PQC(ML-KEM/ML-DSA/SLH-DSA) 미검출 → 펌웨어 업그레이드 후 재덤프 필요
+  - LMS/XMSS(stateful hash 서명) 미검출
+  - 0x00001057 CKM_EDDSA 원본에 2회 중복 → 1회로 통합
+---
+
+# Luna HSM 메커니즘 카탈로그
+
+원본은 `LunaCM mechanism list` 출력의 평문 덤프.
+이 문서는 family/op 기준으로 재정렬한 **작업용 카탈로그**다.
+PoC 코드의 `AlgoSpec` 데이터 소스로 그대로 쓸 수 있다.
+
+## 범례
+- ⭐ = **Phase 1 핵심**(AES/RSA 운영 시연용)
+- ◎ = Phase 1 보조(키쌍 생성·KDF 등 부수 기능)
+- 🛡 = FIPS 권고 / 표준
+- ⚠ = 권장하지 않음(legacy/insecure)
+- 🏷 = 벤더 확장 (`0x80000000` 이상)
+- 🌏 = 지역/도메인 한정 (SM=중국, ARIA=한국, GBCS=영국 스마트미터, DUKPT=결제, Milenage/TUAK=이동통신)
+
+## op 약어
+| 약어 | 의미 |
+|------|------|
+| KEYGEN | 대칭키 생성 |
+| KEYPAIR_GEN | 비대칭 키쌍 생성 |
+| PARAM_GEN | 도메인 파라미터 생성 |
+| SIGN/VERIFY | 디지털 서명·검증 |
+| MAC | 메시지 인증코드(생성·검증) |
+| ENC/DEC | 대칭·비대칭 암복호화 |
+| WRAP/UNWRAP | 키 래핑 |
+| DIGEST | 해시 |
+| DERIVE | 키 유도 (DH, ECDH, BIP32, HKDF류) |
+| KDF | 표준 KDF (PBKDF2, NIST PRF 등) |
+
+---
+
+# 1. RSA  ⭐
+
+## 1.1 키쌍 생성
+| Hex | Mechanism | Op | 비고 / JCE |
+|-----|-----------|-----|-----------|
+| 0x00000000 | CKM_RSA_PKCS_KEY_PAIR_GEN | KEYPAIR_GEN | ⭐ `KeyPairGenerator.getInstance("RSA","LunaProvider")` |
+| 0x0000000a | CKM_RSA_X9_31_KEY_PAIR_GEN | KEYPAIR_GEN | X9.31 |
+| 0x80000142 | CKM_RSA_FIPS_186_3_AUX_PRIME_KEY_PAIR_GEN | KEYPAIR_GEN | 🛡🏷 FIPS 186-3 보조 소수 |
+| 0x80000143 | CKM_RSA_FIPS_186_3_PRIME_KEY_PAIR_GEN | KEYPAIR_GEN | 🛡🏷 FIPS 186-3 |
+
+## 1.2 Sign/Verify — PKCS#1 v1.5
+| Hex | Mechanism | JCE |
+|-----|-----------|-----|
+| 0x00000001 | CKM_RSA_PKCS | `NONEwithRSA` (raw block) |
+| 0x00000003 | CKM_RSA_X_509 | raw RSA, no padding |
+| 0x00000006 | CKM_SHA1_RSA_PKCS | ⚠ `SHA1withRSA` |
+| 0x00000046 | CKM_SHA224_RSA_PKCS | `SHA224withRSA` |
+| 0x00000040 | CKM_SHA256_RSA_PKCS | ⭐ `SHA256withRSA` |
+| 0x00000041 | CKM_SHA384_RSA_PKCS | ⭐ `SHA384withRSA` |
+| 0x00000042 | CKM_SHA512_RSA_PKCS | ⭐ `SHA512withRSA` |
+| 0x00000066 | CKM_SHA3_224_RSA_PKCS | `SHA3-224withRSA` |
+| 0x00000060 | CKM_SHA3_256_RSA_PKCS | `SHA3-256withRSA` |
+| 0x00000061 | CKM_SHA3_384_RSA_PKCS | `SHA3-384withRSA` |
+| 0x00000062 | CKM_SHA3_512_RSA_PKCS | `SHA3-512withRSA` |
+
+## 1.3 Sign/Verify — PSS
+| Hex | Mechanism | JCE |
+|-----|-----------|-----|
+| 0x0000000d | CKM_RSA_PKCS_PSS | `NONEwithRSA/PSS` (수동 해시) |
+| 0x0000000e | CKM_SHA1_RSA_PKCS_PSS | ⚠ `SHA1withRSA/PSS` |
+| 0x00000047 | CKM_SHA224_RSA_PKCS_PSS | `SHA224withRSA/PSS` |
+| 0x00000043 | CKM_SHA256_RSA_PKCS_PSS | ⭐ `SHA256withRSA/PSS` |
+| 0x00000044 | CKM_SHA384_RSA_PKCS_PSS | ⭐ `SHA384withRSA/PSS` |
+| 0x00000045 | CKM_SHA512_RSA_PKCS_PSS | ⭐ `SHA512withRSA/PSS` |
+| 0x00000067 | CKM_SHA3_224_RSA_PKCS_PSS | `SHA3-224withRSA/PSS` |
+| 0x00000063 | CKM_SHA3_256_RSA_PKCS_PSS | `SHA3-256withRSA/PSS` |
+| 0x00000064 | CKM_SHA3_384_RSA_PKCS_PSS | `SHA3-384withRSA/PSS` |
+| 0x00000065 | CKM_SHA3_512_RSA_PKCS_PSS | `SHA3-512withRSA/PSS` |
+
+## 1.4 Sign/Verify — X9.31 (legacy)
+| Hex | Mechanism | 비고 |
+|-----|-----------|------|
+| 0x0000000b | CKM_RSA_X9_31 | ⚠ |
+| 0x0000000c | CKM_SHA1_RSA_X9_31 | ⚠ |
+| 0x80000135 | CKM_SHA224_RSA_X9_31 | 🏷 |
+| 0x80000136 | CKM_SHA256_RSA_X9_31 | 🏷 |
+| 0x80000137 | CKM_SHA384_RSA_X9_31 | 🏷 |
+| 0x80000138 | CKM_SHA512_RSA_X9_31 | 🏷 |
+| 0x8000013e | CKM_RSA_X9_31_NON_FIPS | 🏷⚠ |
+| 0x80000139 | CKM_SHA1_RSA_X9_31_NON_FIPS | 🏷⚠ |
+| 0x8000013a | CKM_SHA224_RSA_X9_31_NON_FIPS | 🏷⚠ |
+| 0x8000013b | CKM_SHA256_RSA_X9_31_NON_FIPS | 🏷⚠ |
+| 0x8000013c | CKM_SHA384_RSA_X9_31_NON_FIPS | 🏷⚠ |
+| 0x8000013d | CKM_SHA512_RSA_X9_31_NON_FIPS | 🏷⚠ |
+
+## 1.5 Encrypt/Decrypt + Key Wrap
+| Hex | Mechanism | Op | JCE |
+|-----|-----------|-----|-----|
+| 0x00000001 | CKM_RSA_PKCS | ENC/DEC, WRAP | ⭐ `RSA/ECB/PKCS1Padding` |
+| 0x00000009 | CKM_RSA_PKCS_OAEP | ENC/DEC, WRAP | ⭐ `RSA/ECB/OAEPWithSHA-256AndMGF1Padding` (params 지정) |
+| 0x00000401 | CKM_KEY_WRAP_SET_OAEP | WRAP/UNWRAP | RSA-OAEP 키래핑 변형 |
+
+---
+
+# 2. AES  ⭐
+
+| Hex | Mechanism | Op | JCE |
+|-----|-----------|-----|-----|
+| 0x00001080 | CKM_AES_KEY_GEN | KEYGEN | ⭐ `KeyGenerator.getInstance("AES","LunaProvider")` |
+| 0x00001081 | CKM_AES_ECB | ENC/DEC | `AES/ECB/NoPadding` (⚠ ECB 자체 권장 X) |
+| 0x00001082 | CKM_AES_CBC | ENC/DEC | `AES/CBC/NoPadding` |
+| 0x00001085 | CKM_AES_CBC_PAD | ENC/DEC | ⭐ `AES/CBC/PKCS5Padding` |
+| 0x8000012f | CKM_AES_CBC_PAD_IPSEC | ENC/DEC | 🏷 IPsec ESP |
+| 0x00002106 | CKM_AES_CFB8 | ENC/DEC | `AES/CFB8/NoPadding` |
+| 0x00002107 | CKM_AES_CFB128 | ENC/DEC | `AES/CFB128/NoPadding` |
+| 0x00002104 | CKM_AES_OFB | ENC/DEC | `AES/OFB/NoPadding` |
+| 0x00001086 | CKM_AES_CTR | ENC/DEC | ⭐ `AES/CTR/NoPadding` |
+| 0x00001087 | CKM_AES_GCM | ENC/DEC (AEAD) | ⭐ `AES/GCM/NoPadding` |
+| 0x00001071 | CKM_AES_XTS | ENC/DEC | 🏷 `AES/XTS/NoPadding` (블록스토리지) |
+| 0x00001083 | CKM_AES_MAC | MAC | `AESCBCMAC` |
+| 0x00001084 | CKM_AES_MAC_GENERAL | MAC | 출력 길이 가변 |
+| 0x0000108a | CKM_AES_CMAC | MAC | ⭐ `AESCMAC` |
+| 0x0000108b | CKM_AES_CMAC_GENERAL | MAC | 출력 길이 가변 |
+| 0x0000108e | CKM_AES_GMAC | MAC | `AESGMAC` |
+| 0x80000170 | CKM_AES_KW | WRAP/UNWRAP | 🏷 ⭐ `AESWrap` (RFC 3394) |
+| 0x80000171 | CKM_AES_KWP | WRAP/UNWRAP | 🏷 ⭐ `AESWrapPad` (RFC 5649) |
+| 0x00001104 | CKM_AES_ECB_ENCRYPT_DATA | DERIVE | data-based key derivation |
+| 0x00001105 | CKM_AES_CBC_ENCRYPT_DATA | DERIVE | data-based key derivation |
+
+---
+
+# 3. EC / ECDSA / ECDH  *(Phase 2)*
+
+| Hex | Mechanism | Op | 비고 / JCE |
+|-----|-----------|-----|-----------|
+| 0x00001040 | CKM_EC_KEY_PAIR_GEN | KEYPAIR_GEN | `KeyPairGenerator "EC"` |
+| 0x80000160 | CKM_EC_KEY_PAIR_GEN_W_EXTRA_BITS | KEYPAIR_GEN | 🏷 |
+| 0x00001041 | CKM_ECDSA | SIGN/VERIFY | `NONEwithECDSA` |
+| 0x00001042 | CKM_ECDSA_SHA1 | SIGN/VERIFY | ⚠ |
+| 0x00001043 | CKM_ECDSA_SHA224 | SIGN/VERIFY | `SHA224withECDSA` |
+| 0x00001044 | CKM_ECDSA_SHA256 | SIGN/VERIFY | `SHA256withECDSA` |
+| 0x00001045 | CKM_ECDSA_SHA384 | SIGN/VERIFY | `SHA384withECDSA` |
+| 0x00001046 | CKM_ECDSA_SHA512 | SIGN/VERIFY | `SHA512withECDSA` |
+| 0x00001047 | CKM_ECDSA_SHA3_224 | SIGN/VERIFY | `SHA3-224withECDSA` |
+| 0x00001048 | CKM_ECDSA_SHA3_256 | SIGN/VERIFY | `SHA3-256withECDSA` |
+| 0x00001049 | CKM_ECDSA_SHA3_384 | SIGN/VERIFY | `SHA3-384withECDSA` |
+| 0x0000104a | CKM_ECDSA_SHA3_512 | SIGN/VERIFY | `SHA3-512withECDSA` |
+| 0x80000161 | CKM_ECDSA_GBCS_SHA256 | SIGN/VERIFY | 🏷🌏 GB Smart-Metering |
+| 0x00001050 | CKM_ECDH1_DERIVE | DERIVE | `KeyAgreement "ECDH"` |
+| 0x00001051 | CKM_ECDH1_COFACTOR_DERIVE | DERIVE | cofactor 변형 |
+| 0x80000a00 | CKM_ECIES | ENC/DEC | 🏷 |
+
+---
+
+# 4. EdDSA / Edwards / Montgomery  *(Phase 2/3)*
+
+| Hex | Mechanism | Op | 비고 |
+|-----|-----------|-----|------|
+| 0x00001055 | CKM_EC_EDWARDS_KEY_PAIR_GEN | KEYPAIR_GEN | Ed25519/Ed448 키쌍 |
+| 0x00001056 | CKM_EC_MONTGOMERY_KEY_PAIR_GEN | KEYPAIR_GEN | X25519/X448 키쌍 |
+| 0x00001057 | CKM_EDDSA | SIGN/VERIFY | `Ed25519`/`Ed448` (원본 중복 1건 통합) |
+| 0x80000c02 | CKM_EDDSA_NACL | SIGN/VERIFY | 🏷 NaCl 호환 |
+| 0x80000c04 | CKM_SHA1_EDDSA_NACL | SIGN/VERIFY | 🏷⚠ |
+| 0x80000c05 | CKM_SHA224_EDDSA_NACL | SIGN/VERIFY | 🏷 |
+| 0x80000c06 | CKM_SHA256_EDDSA_NACL | SIGN/VERIFY | 🏷 |
+| 0x80000c07 | CKM_SHA384_EDDSA_NACL | SIGN/VERIFY | 🏷 |
+| 0x80000c08 | CKM_SHA512_EDDSA_NACL | SIGN/VERIFY | 🏷 |
+| 0x80000c09 | CKM_SHA1_EDDSA | SIGN/VERIFY | 🏷⚠ |
+| 0x80000c0a | CKM_SHA224_EDDSA | SIGN/VERIFY | 🏷 |
+| 0x80000c0b | CKM_SHA256_EDDSA | SIGN/VERIFY | 🏷 |
+| 0x80000c0c | CKM_SHA384_EDDSA | SIGN/VERIFY | 🏷 |
+| 0x80000c0d | CKM_SHA512_EDDSA | SIGN/VERIFY | 🏷 |
+| 0x80000f20 | CKM_SHA3_224_EDDSA | SIGN/VERIFY | 🏷 |
+| 0x80000f21 | CKM_SHA3_256_EDDSA | SIGN/VERIFY | 🏷 |
+| 0x80000f22 | CKM_SHA3_384_EDDSA | SIGN/VERIFY | 🏷 |
+| 0x80000f23 | CKM_SHA3_512_EDDSA | SIGN/VERIFY | 🏷 |
+
+---
+
+# 5. DSA / DH  *(legacy / 호환)*
+
+## 5.1 DSA
+| Hex | Mechanism | Op |
+|-----|-----------|-----|
+| 0x00000010 | CKM_DSA_KEY_PAIR_GEN | KEYPAIR_GEN |
+| 0x00002000 | CKM_DSA_PARAMETER_GEN | PARAM_GEN |
+| 0x00000011 | CKM_DSA | SIGN/VERIFY |
+| 0x00000012 | CKM_DSA_SHA1 | SIGN/VERIFY ⚠ |
+| 0x00000013 | CKM_DSA_SHA224 | SIGN/VERIFY |
+| 0x00000014 | CKM_DSA_SHA256 | SIGN/VERIFY |
+| 0x00000018 | CKM_DSA_SHA3_224 | SIGN/VERIFY |
+| 0x00000019 | CKM_DSA_SHA3_256 | SIGN/VERIFY |
+| 0x0000001a | CKM_DSA_SHA3_384 | SIGN/VERIFY |
+| 0x0000001b | CKM_DSA_SHA3_512 | SIGN/VERIFY |
+
+## 5.2 Diffie-Hellman
+| Hex | Mechanism | Op |
+|-----|-----------|-----|
+| 0x00000020 | CKM_DH_PKCS_KEY_PAIR_GEN | KEYPAIR_GEN |
+| 0x00002001 | CKM_DH_PKCS_PARAMETER_GEN | PARAM_GEN |
+| 0x00000021 | CKM_DH_PKCS_DERIVE | DERIVE |
+| 0x00000030 | CKM_X9_42_DH_KEY_PAIR_GEN | KEYPAIR_GEN |
+| 0x00002002 | CKM_X9_42_DH_PARAMETER_GEN | PARAM_GEN |
+| 0x00000031 | CKM_X9_42_DH_DERIVE | DERIVE |
+| 0x00000032 | CKM_X9_42_DH_HYBRID_DERIVE | DERIVE |
+
+---
+
+# 6. 대칭 (AES 외 — 대부분 legacy)
+
+## 6.1 DES / DES2 / DES3
+| Hex | Mechanism | Op | 비고 |
+|-----|-----------|-----|------|
+| 0x00000120 | CKM_DES_KEY_GEN | KEYGEN | ⚠ |
+| 0x00000121 | CKM_DES_ECB | ENC/DEC | ⚠ |
+| 0x00000122 | CKM_DES_CBC | ENC/DEC | ⚠ |
+| 0x00000125 | CKM_DES_CBC_PAD | ENC/DEC | ⚠ |
+| 0x00000123 | CKM_DES_MAC | MAC | ⚠ |
+| 0x00000124 | CKM_DES_MAC_GENERAL | MAC | ⚠ |
+| 0x00000150 | CKM_DES_OFB64 | ENC/DEC | ⚠ |
+| 0x00000152 | CKM_DES_CFB64 | ENC/DEC | ⚠ |
+| 0x00000153 | CKM_DES_CFB8 | ENC/DEC | ⚠ |
+| 0x00000130 | CKM_DES2_KEY_GEN | KEYGEN | ⚠ |
+| 0x00000131 | CKM_DES3_KEY_GEN | KEYGEN | ⚠ TripleDES |
+| 0x00000132 | CKM_DES3_ECB | ENC/DEC | ⚠ |
+| 0x00000133 | CKM_DES3_CBC | ENC/DEC | ⚠ |
+| 0x00000136 | CKM_DES3_CBC_PAD | ENC/DEC | ⚠ |
+| 0x8000012e | CKM_DES3_CBC_PAD_IPSEC | ENC/DEC | 🏷⚠ |
+| 0x80000116 | CKM_DES3_CTR | ENC/DEC | 🏷⚠ |
+| 0x00000134 | CKM_DES3_MAC | MAC | ⚠ |
+| 0x00000135 | CKM_DES3_MAC_GENERAL | MAC | ⚠ |
+| 0x00000138 | CKM_DES3_CMAC | MAC | ⚠ |
+| 0x00000137 | CKM_DES3_CMAC_GENERAL | MAC | ⚠ |
+| 0x80000150 | CKM_DES3_X919_MAC | MAC | 🏷⚠ ANSI X9.19 |
+| 0x00001100 | CKM_DES_ECB_ENCRYPT_DATA | DERIVE | ⚠ |
+| 0x00001101 | CKM_DES_CBC_ENCRYPT_DATA | DERIVE | ⚠ |
+| 0x00001102 | CKM_DES3_ECB_ENCRYPT_DATA | DERIVE | ⚠ |
+| 0x00001103 | CKM_DES3_CBC_ENCRYPT_DATA | DERIVE | ⚠ |
+
+## 6.2 ARIA  🌏 (KS X 1213)
+| Hex | Mechanism | Op | 비고 |
+|-----|-----------|-----|------|
+| 0x00000560 | CKM_ARIA_KEY_GEN | KEYGEN | |
+| 0x00000561 | CKM_ARIA_ECB | ENC/DEC | |
+| 0x00000562 | CKM_ARIA_CBC | ENC/DEC | |
+| 0x00000565 | CKM_ARIA_CBC_PAD | ENC/DEC | |
+| 0x00000563 | CKM_ARIA_MAC | MAC | |
+| 0x00000564 | CKM_ARIA_MAC_GENERAL | MAC | |
+| 0x80000128 | CKM_ARIA_CMAC | MAC | 🏷 |
+| 0x80000129 | CKM_ARIA_CMAC_GENERAL | MAC | 🏷 |
+| 0x8000011d | CKM_ARIA_CFB8 | ENC/DEC | 🏷 |
+| 0x8000011e | CKM_ARIA_CFB128 | ENC/DEC | 🏷 |
+| 0x8000011f | CKM_ARIA_OFB | ENC/DEC | 🏷 |
+| 0x80000120 | CKM_ARIA_CTR | ENC/DEC | 🏷 |
+| 0x80000130 | CKM_ARIA_L_ECB | ENC/DEC | 🏷 Lite |
+| 0x80000131 | CKM_ARIA_L_CBC | ENC/DEC | 🏷 Lite |
+| 0x80000132 | CKM_ARIA_L_CBC_PAD | ENC/DEC | 🏷 Lite |
+| 0x80000133 | CKM_ARIA_L_MAC | MAC | 🏷 Lite |
+| 0x80000134 | CKM_ARIA_L_MAC_GENERAL | MAC | 🏷 Lite |
+| 0x00000566 | CKM_ARIA_ECB_ENCRYPT_DATA | DERIVE | |
+| 0x00000567 | CKM_ARIA_CBC_ENCRYPT_DATA | DERIVE | |
+
+## 6.3 SM4  🌏 (중국)
+| Hex | Mechanism | Op |
+|-----|-----------|-----|
+| 0x80000b10 | CKM_SM4_KEY_GEN | KEYGEN 🏷 |
+| 0x80000b11 | CKM_SM4_ECB | ENC/DEC 🏷 |
+| 0x80000b12 | CKM_SM4_CBC | ENC/DEC 🏷 |
+| 0x80000b13 | CKM_SM4_CBC_PAD | ENC/DEC 🏷 |
+
+## 6.4 RC2 / RC4 / RC5 / CAST3 / CAST5  ⚠ (legacy, 미사용 권장)
+| Hex | Mechanism | Op |
+|-----|-----------|-----|
+| 0x00000100 | CKM_RC2_KEY_GEN | KEYGEN ⚠ |
+| 0x00000101 | CKM_RC2_ECB | ENC/DEC ⚠ |
+| 0x00000102 | CKM_RC2_CBC | ENC/DEC ⚠ |
+| 0x00000103 | CKM_RC2_MAC | MAC ⚠ |
+| 0x00000104 | CKM_RC2_MAC_GENERAL | MAC ⚠ |
+| 0x00000105 | CKM_RC2_CBC_PAD | ENC/DEC ⚠ |
+| 0x00000110 | CKM_RC4_KEY_GEN | KEYGEN ⚠ |
+| 0x00000111 | CKM_RC4 | ENC/DEC ⚠ |
+| 0x00000310 | CKM_CAST3_KEY_GEN | KEYGEN ⚠ |
+| 0x00000311 | CKM_CAST3_ECB | ENC/DEC ⚠ |
+| 0x00000312 | CKM_CAST3_CBC | ENC/DEC ⚠ |
+| 0x00000313 | CKM_CAST3_MAC | MAC ⚠ |
+| 0x00000314 | CKM_CAST3_MAC_GENERAL | MAC ⚠ |
+| 0x00000315 | CKM_CAST3_CBC_PAD | ENC/DEC ⚠ |
+| 0x00000320 | CKM_CAST5_KEY_GEN | KEYGEN ⚠ |
+| 0x00000321 | CKM_CAST5_ECB | ENC/DEC ⚠ |
+| 0x00000322 | CKM_CAST5_CBC | ENC/DEC ⚠ |
+| 0x00000323 | CKM_CAST5_MAC | MAC ⚠ |
+| 0x00000324 | CKM_CAST5_MAC_GENERAL | MAC ⚠ |
+| 0x00000325 | CKM_CAST5_CBC_PAD | ENC/DEC ⚠ |
+| 0x00000330 | CKM_RC5_KEY_GEN | KEYGEN ⚠ |
+| 0x00000331 | CKM_RC5_ECB | ENC/DEC ⚠ |
+| 0x00000332 | CKM_RC5_CBC | ENC/DEC ⚠ |
+| 0x00000333 | CKM_RC5_MAC | MAC ⚠ |
+| 0x00000334 | CKM_RC5_MAC_GENERAL | MAC ⚠ |
+| 0x00000335 | CKM_RC5_CBC_PAD | ENC/DEC ⚠ |
+
+---
+
+# 7. 해시 / HMAC / KDF
+
+## 7.1 Digest
+| Hex | Mechanism | JCE |
+|-----|-----------|-----|
+| 0x00000200 | CKM_MD2 | ⚠ `MD2` |
+| 0x00000220 | CKM_SHA_1 | ⚠ `SHA-1` |
+| 0x00000255 | CKM_SHA224 | `SHA-224` |
+| 0x00000250 | CKM_SHA256 | ⭐ `SHA-256` |
+| 0x00000260 | CKM_SHA384 | `SHA-384` |
+| 0x00000270 | CKM_SHA512 | `SHA-512` |
+| 0x000002b5 | CKM_SHA3_224 | `SHA3-224` |
+| 0x000002b0 | CKM_SHA3_256 | `SHA3-256` |
+| 0x000002c0 | CKM_SHA3_384 | `SHA3-384` |
+| 0x000002d0 | CKM_SHA3_512 | `SHA3-512` |
+| 0x80000f00 | CKM_SHAKE_128 | 🏷 `SHAKE128` |
+| 0x80000f01 | CKM_SHAKE_256 | 🏷 `SHAKE256` |
+| 0x80000f08 | CKM_KECCAK_224 | 🏷 |
+| 0x80000f09 | CKM_KECCAK_256 | 🏷 |
+| 0x80000f0a | CKM_KECCAK_384 | 🏷 |
+| 0x80000f0b | CKM_KECCAK_512 | 🏷 |
+| 0x80000b01 | CKM_SM3 | 🏷🌏 |
+
+## 7.2 HMAC
+| Hex | Mechanism | JCE |
+|-----|-----------|-----|
+| 0x00000211 | CKM_MD5_HMAC | ⚠ `HmacMD5` |
+| 0x00000212 | CKM_MD5_HMAC_GENERAL | ⚠ |
+| 0x00000221 | CKM_SHA_1_HMAC | ⚠ `HmacSHA1` |
+| 0x00000222 | CKM_SHA_1_HMAC_GENERAL | ⚠ |
+| 0x00000256 | CKM_SHA224_HMAC | `HmacSHA224` |
+| 0x00000257 | CKM_SHA224_HMAC_GENERAL | |
+| 0x00000251 | CKM_SHA256_HMAC | ⭐ `HmacSHA256` |
+| 0x00000252 | CKM_SHA256_HMAC_GENERAL | |
+| 0x00000261 | CKM_SHA384_HMAC | `HmacSHA384` |
+| 0x00000262 | CKM_SHA384_HMAC_GENERAL | |
+| 0x00000271 | CKM_SHA512_HMAC | `HmacSHA512` |
+| 0x00000272 | CKM_SHA512_HMAC_GENERAL | |
+| 0x000002b6 | CKM_SHA3_224_HMAC | `HmacSHA3-224` |
+| 0x000002b7 | CKM_SHA3_224_HMAC_GENERAL | |
+| 0x000002b1 | CKM_SHA3_256_HMAC | `HmacSHA3-256` |
+| 0x000002b2 | CKM_SHA3_256_HMAC_GENERAL | |
+| 0x000002c1 | CKM_SHA3_384_HMAC | `HmacSHA3-384` |
+| 0x000002c2 | CKM_SHA3_384_HMAC_GENERAL | |
+| 0x000002d1 | CKM_SHA3_512_HMAC | `HmacSHA3-512` |
+| 0x000002d2 | CKM_SHA3_512_HMAC_GENERAL | |
+| 0x80000b02 | CKM_SM3_HMAC | 🏷🌏 |
+| 0x80000b03 | CKM_SM3_HMAC_GENERAL | 🏷🌏 |
+
+## 7.3 Key Derivation (해시 기반) ◎
+| Hex | Mechanism | Op | 비고 |
+|-----|-----------|-----|------|
+| 0x00000391 | CKM_MD2_KEY_DERIVATION | DERIVE | ⚠ |
+| 0x00000390 | CKM_MD5_KEY_DERIVATION | DERIVE | ⚠ |
+| 0x00000392 | CKM_SHA1_KEY_DERIVATION | DERIVE | ⚠ |
+| 0x00000396 | CKM_SHA224_KEY_DERIVATION | DERIVE | |
+| 0x00000393 | CKM_SHA256_KEY_DERIVATION | DERIVE | |
+| 0x00000394 | CKM_SHA384_KEY_DERIVATION | DERIVE | |
+| 0x00000395 | CKM_SHA512_KEY_DERIVATION | DERIVE | |
+| 0x00000398 | CKM_SHA3_224_KEY_DERIVE | DERIVE | |
+| 0x00000397 | CKM_SHA3_256_KEY_DERIVE | DERIVE | |
+| 0x00000399 | CKM_SHA3_384_KEY_DERIVE | DERIVE | |
+| 0x0000039a | CKM_SHA3_512_KEY_DERIVE | DERIVE | |
+| 0x0000039b | CKM_SHAKE_128_KEY_DERIVE | DERIVE | |
+| 0x0000039c | CKM_SHAKE_256_KEY_DERIVE | DERIVE | |
+| 0x80000b04 | CKM_SM3_KEY_DERIVATION | DERIVE | 🏷🌏 |
+
+## 7.4 표준 KDF / 비밀키 생성
+| Hex | Mechanism | Op | JCE |
+|-----|-----------|-----|-----|
+| 0x000003b0 | CKM_PKCS5_PBKD2 | KDF | `SecretKeyFactory "PBKDF2WithHmacSHA*"` |
+| 0x80000a02 | CKM_NIST_PRF_KDF | KDF | 🏷 SP 800-108 |
+| 0x80000a03 | CKM_PRF_KDF | KDF | 🏷 |
+| 0x00000350 | CKM_GENERIC_SECRET_KEY_GEN | KEYGEN | ◎ HMAC/HKDF용 generic secret |
+
+---
+
+# 8. PBE (Password-Based Encryption — legacy)
+
+| Hex | Mechanism | 비고 |
+|-----|-----------|------|
+| 0x000003a0 | CKM_PBE_MD2_DES_CBC | ⚠ |
+| 0x000003a8 | CKM_PBE_SHA1_DES3_EDE_CBC | ⚠ |
+| 0x000003a5 | CKM_PBE_SHA1_CAST5_CBC | ⚠ |
+| 0x000003a9 | CKM_PBE_SHA1_DES2_EDE_CBC | ⚠ |
+| 0x000003a6 | CKM_PBE_SHA1_RC4_128 | ⚠ |
+| 0x000003a7 | CKM_PBE_SHA1_RC4_40 | ⚠ |
+| 0x000003aa | CKM_PBE_SHA1_RC2_128_CBC | ⚠ |
+| 0x000003ab | CKM_PBE_SHA1_RC2_40_CBC | ⚠ |
+| 0x0000801f | CKM_PBE_SHA1_DES2_EDE_CBC_OLD | 🏷⚠ |
+| 0x0000801e | CKM_PBE_SHA1_DES3_EDE_CBC_OLD | 🏷⚠ |
+
+---
+
+# 9. SSL/TLS 키유도 (legacy SSL3)
+
+| Hex | Mechanism | Op |
+|-----|-----------|-----|
+| 0x00000370 | CKM_SSL3_PRE_MASTER_KEY_GEN | KEYGEN ⚠ |
+| 0x00000371 | CKM_SSL3_MASTER_KEY_DERIVE | DERIVE ⚠ |
+| 0x00000372 | CKM_SSL3_KEY_AND_MAC_DERIVE | DERIVE ⚠ |
+| 0x00000380 | CKM_SSL3_MD5_MAC | MAC ⚠ |
+| 0x00000381 | CKM_SSL3_SHA1_MAC | MAC ⚠ |
+
+---
+
+# 10. 도메인 특화 (벤더 확장)
+
+## 10.1 SM2  🌏 (중국 디지털서명)
+| Hex | Mechanism | Op |
+|-----|-----------|-----|
+| 0x80000b20 | CKM_SM2_KEY_PAIR_GEN | KEYPAIR_GEN 🏷 |
+| 0x80000b21 | CKM_SM2DSA | SIGN/VERIFY 🏷 |
+| 0x80000b22 | CKM_SM3_SM2DSA | SIGN/VERIFY 🏷 |
+| 0x80000b23 | CKM_SHA1_SM2DSA | SIGN/VERIFY 🏷⚠ |
+| 0x80000b24 | CKM_SHA224_SM2DSA | SIGN/VERIFY 🏷 |
+| 0x80000b25 | CKM_SHA256_SM2DSA | SIGN/VERIFY 🏷 |
+| 0x80000b26 | CKM_SHA384_SM2DSA | SIGN/VERIFY 🏷 |
+| 0x80000b27 | CKM_SHA512_SM2DSA | SIGN/VERIFY 🏷 |
+
+## 10.2 BIP32  🌏 (HD Wallet)
+| Hex | Mechanism | Op |
+|-----|-----------|-----|
+| 0x80000e00 | CKM_BIP32_MASTER_DERIVE | DERIVE 🏷 |
+| 0x80000e01 | CKM_BIP32_CHILD_DERIVE | DERIVE 🏷 |
+
+## 10.3 결제 — DUKPT (Derived Unique Key Per Transaction)
+| Hex | Mechanism | Op |
+|-----|-----------|-----|
+| 0x80000610 | CKM_DES2_DUKPT_IPEK | DERIVE 🏷 |
+| 0x80000611 | CKM_DES2_DUKPT_PIN | DERIVE 🏷 |
+| 0x80000612 | CKM_DES2_DUKPT_MAC | DERIVE 🏷 |
+| 0x80000613 | CKM_DES2_DUKPT_MAC_RESP | DERIVE 🏷 |
+| 0x80000614 | CKM_DES2_DUKPT_DATA | DERIVE 🏷 |
+| 0x80000615 | CKM_DES2_DUKPT_DATA_RESP | DERIVE 🏷 |
+
+## 10.4 이동통신 (3GPP 인증)
+| Hex | Mechanism | Op |
+|-----|-----------|-----|
+| 0x80000e21 | CKM_MILENAGE | DERIVE/MAC 🏷 |
+| 0x80000e22 | CKM_MILENAGE_RESYNC | DERIVE 🏷 |
+| 0x80000e23 | CKM_MILENAGE_AUTS | DERIVE 🏷 |
+| 0x80000e24 | CKM_TUAK | DERIVE/MAC 🏷 |
+| 0x80000e25 | CKM_TUAK_RESYNC | DERIVE 🏷 |
+| 0x80000e26 | CKM_TUAK_AUTS | DERIVE 🏷 |
+| 0x80000e27 | CKM_COMP128 | DERIVE 🏷⚠ (GSM legacy) |
+
+---
+
+# 11. 분석 노트
+
+## 11.1 미검출 (펌웨어 업그레이드 시 재확인 필요)
+- **PQC 서명**: ML-DSA(Dilithium), SLH-DSA(SPHINCS+), Falcon
+- **PQC KEM**: ML-KEM(Kyber)
+- **stateful hash 서명**: LMS, HSS, XMSS, XMSS^MT
+- **추가 ECC**: Curve25519/Ed448 비EdDSA 변형, secp256k1 명시 메커니즘 (보통 EC_KEY_PAIR_GEN + curve param)
+
+→ Luna FW가 PQC 빌드(예: 7.13.x 계열)로 올라가면 ML-KEM/ML-DSA 메커니즘이 추가로 노출됨. 이때 `mechanism list`를 다시 떠서 이 문서를 갱신.
+
+## 11.2 원본 이상치
+- `0x00001057 CKM_EDDSA` — 원본 251·252 라인 **중복**, 1회로 통합
+- 그 외 누락·오타 미발견
+
+## 11.3 Phase 1 결정에 따른 사용 메커니즘 (요약)
+| 용도 | CKM | JCE |
+|------|-----|-----|
+| RSA 키쌍 생성 | CKM_RSA_PKCS_KEY_PAIR_GEN | `RSA` |
+| RSA 서명 (PKCS#1 v1.5) | CKM_SHA256_RSA_PKCS | `SHA256withRSA` |
+| RSA 서명 (PSS) | CKM_SHA256_RSA_PKCS_PSS | `SHA256withRSA/PSS` |
+| RSA 암복호화 | CKM_RSA_PKCS_OAEP | `RSA/ECB/OAEPWithSHA-256AndMGF1Padding` |
+| AES 키 생성 | CKM_AES_KEY_GEN | `AES` |
+| AES 암복호화 (CBC) | CKM_AES_CBC_PAD | `AES/CBC/PKCS5Padding` |
+| AES 암복호화 (GCM) | CKM_AES_GCM | `AES/GCM/NoPadding` |
+| AES 키래핑 | CKM_AES_KWP | `AESWrapPad` |
+| AES MAC | CKM_AES_CMAC | `AESCMAC` |
+| HMAC (보조) | CKM_SHA256_HMAC | `HmacSHA256` |
+| 외부 검증용 해시 | CKM_SHA256 | `SHA-256` |
+
+이 11개 조합이 Phase 1 GUI 콤보박스의 기본 항목.

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.yours.hsm.ui.PqcController"
+      spacing="0" styleClass="tab-content">
+
+    <!-- 키 생성 (한 번만 만들고 재사용) -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+        <Label text="양자내성암호 (PQC) — 토큰 키 생성" styleClass="section-title"/>
+        <Label text="필요한 PQC 키를 한 번 만들어 두면 아래 '실행'에서 계속 재사용합니다. (HSM 연결 필요)"
+               styleClass="muted-label" wrapText="true"/>
+
+        <GridPane hgap="10" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="90" prefWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+                <ColumnConstraints minWidth="90" prefWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+
+            <Label text="알고리즘" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="algoCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <Label text="라벨(alias)" styleClass="form-label" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+            <TextField fx:id="aliasField" promptText="생성할 PQC 키 라벨..." styleClass="dark-field"
+                       GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+        </GridPane>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Button fx:id="generateBtn" text="토큰에 키 생성" styleClass="btn-secondary" onAction="#onGenerate" disable="true"/>
+            <Label fx:id="genStatusLabel" text="" styleClass="muted-label"/>
+        </HBox>
+    </VBox>
+
+    <!-- 실행 (기존 토큰 키 선택) -->
+    <VBox styleClass="panel" spacing="8">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+        <Label text="실행 — 기존 토큰 키로 서명/캡슐화" styleClass="section-title"/>
+
+        <GridPane hgap="10" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="90" prefWidth="100"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+
+            <Label text="토큰 키" styleClass="form-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="keyCombo" maxWidth="Infinity" styleClass="dark-combo"
+                      GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        </GridPane>
+
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Button fx:id="runBtn"     text="실행"       styleClass="btn-primary"   onAction="#onRun" disable="true"/>
+            <Button fx:id="refreshBtn" text="키 새로고침" styleClass="btn-secondary" onAction="#onRefresh" disable="true"/>
+            <Button fx:id="clearBtn"   text="지우기"     styleClass="btn-secondary" onAction="#onClear"/>
+            <Label fx:id="statusLabel" text="" styleClass="status-label"/>
+        </HBox>
+    </VBox>
+
+    <!-- 입출력 -->
+    <HBox VBox.vgrow="ALWAYS" spacing="10">
+        <padding><Insets top="10" right="14" bottom="14" left="14"/></padding>
+
+        <VBox spacing="4" prefWidth="300" minWidth="220">
+            <Label text="서명할 메시지 (ML-DSA용)" styleClass="section-title"/>
+            <TextArea fx:id="messageArea" VBox.vgrow="ALWAYS" styleClass="log-area"
+                      promptText="ML-DSA 서명에 쓸 텍스트 (ML-KEM은 사용 안 함)..." wrapText="true"/>
+        </VBox>
+
+        <VBox HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="실행 결과" styleClass="section-title"/>
+            <TextArea fx:id="resultArea" VBox.vgrow="ALWAYS" styleClass="log-area"
+                      promptText="토큰 키를 선택하고 [실행]을 누르세요..." editable="false" wrapText="true"/>
+        </VBox>
+    </HBox>
+
+</VBox>

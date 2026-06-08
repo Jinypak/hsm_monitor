@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-04-22T11:18:22.942950",
+  "token_label": "HA_test",
+  "slot": 0,
+  "mechanism": "CKM_SHA256_RSA_PKCS (RSA-2048 + SHA-256 + PKCS#1 v1.5)",
+  "test_data": "HSM Sign/Verify Test | 2026-04-22T11:18:22.618600",
+  "test_data_sha256": "3242c522a1d41508d073c533dea97938ff6f709b488c5306e511b181b27b9cea",
+  "private_key": {
+    "label": "Generated RSA Private Key",
+    "key_bits": 2048
+  },
+  "public_key": {
+    "label": "Generated RSA Public Key",
+    "key_bits": 2048,
+    "pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1EpIe1wYjuuELSxa2sov\nCzILze1ny6tQjCZ3HPuxcj1hQ685d72+w6mhWVnb+dhSkGbRIEtkTDxwU2sOXi7M\nfImeFpov/WLYP9ICyEyTiXxLXqqx4CKSUGn0xrDP8DzKN4ib2hNHJU042dH+d7Q2\nNfG7w+CABs8WjyoErs4f+wwHiNgrjMsg9BntsAd0g8a4ytUfDne4V4PraEnpU1bN\nHU7i7BKICLixcAwCt7NL0exyGIIqlaZ7ECbJ92U0GEc3kIoAJgJq79HUi4aee6p4\nTSEdApOY91N34etjPigHRZYiqyvRJaGEL9NTvhKOU3Kw/WH8GWNfx+vLH2LOJ8BC\nsQIDAQAB\n-----END PUBLIC KEY-----\n"
+  },
+  "signature": {
+    "length_bytes": 256,
+    "hex": "9df2b1a69b7768101c56eb4635b69978a2b066ec2e0f2f14836ab16d9c46c6f3653074d6b524dc06fee6be4794f1e17ec6655a19566aa4fc277b5e9638ed1976ed7661615b370cf19b126e58a14b47d03d9954f4c254ba88f2c75928ad05bdcbdc85435f99f76e2ba48e975bdf543a863a14fe524d024e630f598fcf24af4cf374d34d53b4695937abfe3534f9d2b0e1b0ede658880d97cd305096f630c9560468eb983519cb2c09493a8dec394310dcb2614dfa6c215adde6faaebdb1e1057c8a2121b4079cebd3f297072dbcb03f02c826ea98288f05399eb6af187fe58bb85e1bd77dbca5f1cfbcf3a6ea70b611f662f4c2b0a4d728aa411590ead568bacd",
+    "base64": "nfKxppt3aBAcVutGNbaZeKKwZuwuDy8Ug2qxbZxGxvNlMHTWtSTcBv7mvkeU8eF+xmVaGVZqpPwne16WOO0Zdu12YWFbNwzxmxJuWKFLR9A9mVT0wlS6iPLHWSitBb3L3IVDX5n3biukjpdb31Q6hjoU/lJNAk5jD1mPzySvTPN0001TtGlZN6v+NTT50rDhsO3mWIgNl80wUJb2MMlWBGjrmDUZyywJSTqN7DlDENyyYU36bCFa3eb6rr2x4QV8iiEhtAec69PylwctvLA/Asgm6pgojwU5nravGH/li7heG9d9vKXxz7zzpupwthH2YvTCsKTXKKpBFZDq1Wi6zQ=="
+  },
+  "verification": {
+    "method": "software (cryptography library)",
+    "original_data_valid": true,
+    "original_msg": "서명 검증 성공 (VALID)",
+    "tampered_sig_rejected": true,
+    "tampered_msg": "변조 서명 정상 거부 (INVALID)"
+  },
+  "overall_pass": true
+}
