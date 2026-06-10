@@ -57,40 +57,37 @@ gradlew() {
 CMD="${1:-help}"
 shift || true
 
-# 설치된 JDK 메이저 버전 자동 감지 — Gradle toolchain 에 전달
-_java_ver() {
-    java -version 2>&1 | grep -oP '(?<=version ")\d+' | head -1
-}
-JAVA_MAJOR=$(_java_ver 2>/dev/null || echo "21")
-JAVA_VER_FLAG="-PjavaVersion=${JAVA_MAJOR}"
+# JDK 버전 표시용 (Gradle에는 더 이상 전달하지 않음 — toolchain 제거로 불필요)
+_java_ver() { java -version 2>&1 | grep -oP '(?<=version ")\d+' | head -1; }
+JAVA_MAJOR=$(_java_ver 2>/dev/null || echo "??")
 
 case "$CMD" in
 
   start)
     info "HSM Monitor GUI 시작... (JDK ${JAVA_MAJOR})"
-    gradlew run "$JAVA_VER_FLAG" "$@"
+    gradlew run "$@"
     ;;
 
   test)
     info "단위 테스트 실행... (JDK ${JAVA_MAJOR})"
-    gradlew test --console=plain "$JAVA_VER_FLAG" "$@"
+    gradlew test --console=plain "$@"
     ok "테스트 완료"
     ;;
 
   build)
     info "빌드 중... (JDK ${JAVA_MAJOR})"
-    gradlew build "$JAVA_VER_FLAG" "$@"
+    gradlew build "$@"
     ok "빌드 완료"
     ;;
 
   algolist)
     info "HSM 알고리즘 가용성 조회... (JDK ${JAVA_MAJOR})"
-    gradlew algoList -q "$JAVA_VER_FLAG" "$@"
+    gradlew algoList -q "$@"
     ;;
 
   cli)
     info "HSM Monitor CLI 시작... (JDK ${JAVA_MAJOR})"
-    gradlew hsmCli -q "$JAVA_VER_FLAG" "$@"
+    gradlew hsmCli -q "$@"
     ;;
 
   pqctest)
@@ -104,7 +101,7 @@ case "$CMD" in
     done
     [[ -z "$PIN" ]] && error "-p <PIN> 이 필요합니다. 예: ./vision pqctest -s 0 -p YOUR_PIN"
     info "PQC HSM 검증 (slot=$SLOT, JDK ${JAVA_MAJOR})..."
-    gradlew pqcHsmTest -q "$JAVA_VER_FLAG" "-Pslot=$SLOT" "-Ppin=$PIN" "$@"
+    gradlew pqcHsmTest -q "-Pslot=$SLOT" "-Ppin=$PIN" "$@"
     ;;
 
   probeluna|probeLuna)

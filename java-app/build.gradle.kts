@@ -10,15 +10,18 @@ plugins {
 group = "com.yours.hsm"
 version = "0.1.0-SNAPSHOT"
 
+// toolchain 을 사용하지 않고 현재 실행 중인 JDK를 그대로 사용한다.
+// Gradle toolchain auto-detection 은 비표준 경로(RHEL 등)에서 설치된 JDK를 못 찾는 경우가 있어
+// "Cannot find a Java installation" 오류가 발생한다.
+val runningJdk = JavaVersion.current()
 java {
-    toolchain {
-        // -PjavaVersion=N 명시 > OS 기본값(Windows=25, Linux=21) 순으로 결정.
-        // vision 스크립트가 Linux에서 실제 JDK 버전을 자동 감지해 -PjavaVersion 으로 전달한다.
-        val explicit = (project.findProperty("javaVersion") as String?)?.toInt()
-        val osDefault = if (System.getProperty("os.name").lowercase().contains("win")) 25 else 21
-        val v = explicit ?: osDefault
-        languageVersion.set(JavaLanguageVersion.of(v))
-    }
+    sourceCompatibility = runningJdk
+    targetCompatibility = runningJdk
+}
+
+// 최소 JDK 21 요구 (virtual threads, sealed interfaces, pattern switch 등 사용)
+if (runningJdk < JavaVersion.VERSION_21) {
+    throw GradleException("JDK 21 이상이 필요합니다. 현재: $runningJdk")
 }
 
 // Luna JSP 경로 — OS별 기본값(Windows/Linux). -PlunaClientPath / -PlunaJspLib 로 오버라이드.
