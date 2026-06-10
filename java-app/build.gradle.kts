@@ -13,18 +13,14 @@ plugins {
 group = "com.yours.hsm"
 version = "0.1.0-SNAPSHOT"
 
-// toolchain 을 사용하지 않고 현재 실행 중인 JDK를 그대로 사용한다.
-// Gradle toolchain auto-detection 은 비표준 경로(RHEL 등)에서 설치된 JDK를 못 찾는 경우가 있어
-// "Cannot find a Java installation" 오류가 발생한다.
-val runningJdk = JavaVersion.current()
-java {
-    sourceCompatibility = runningJdk
-    targetCompatibility = runningJdk
-}
+// sourceCompatibility / toolchain 을 지정하지 않는다.
+// → Gradle 이 JDK 를 스캔(auto-detect)하지 않고 실행 중인 JVM 을 그대로 사용.
+// 컴파일 타겟은 아래 tasks.withType<JavaCompile> 에서 --release 로 지정.
 
 // 최소 JDK 21 요구 (virtual threads, sealed interfaces, pattern switch 등 사용)
-if (runningJdk < JavaVersion.VERSION_21) {
-    throw GradleException("JDK 21 이상이 필요합니다. 현재: $runningJdk")
+val runningJdkVersion = JavaVersion.current()
+if (runningJdkVersion < JavaVersion.VERSION_21) {
+    throw GradleException("JDK 21 이상이 필요합니다. 현재: $runningJdkVersion")
 }
 
 // Luna JSP 경로 — OS별 기본값(Windows/Linux). -PlunaClientPath / -PlunaJspLib 로 오버라이드.
@@ -96,6 +92,8 @@ tasks.named<JavaExec>("run") {
 }
 
 tasks.withType<JavaCompile> {
+    // --release 21: 도구체인 스캔 없이 현재 JVM 컴파일러로 Java 21 대상 바이트코드 생성
+    options.release.set(21)
     options.compilerArgs.add("-parameters")
 }
 
