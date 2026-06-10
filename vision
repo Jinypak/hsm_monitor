@@ -87,8 +87,9 @@ case "$CMD" in
 
   cli)
     info "HSM Monitor CLI 시작... (JDK ${JAVA_MAJOR})"
-    # -PskipJavafx: JavaFX 플러그인·UI 코드 제외 → JRE만 있는 환경(javac 불필요)에서도 동작
-    gradlew hsmCli -q -PskipJavafx "$@"
+    # --console=plain: Gradle 진행률 바(EXECUTING) 제거 — 대화형 입력 방해 방지
+    # -PskipJavafx: JavaFX 플러그인·UI 코드 제외 → JRE만 있는 환경에서도 동작
+    gradlew hsmCli -q --console=plain -PskipJavafx "$@"
     ;;
 
   pqctest)

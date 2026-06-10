@@ -4,27 +4,26 @@ import java.time.format.DateTimeFormatter
 
 plugins {
     application
-    // CLI 전용 빌드(-PskipJavafx)에서는 JavaFX 플러그인을 적용하지 않는다.
-    // 플러그인이 내부적으로 Gradle toolchain을 사용해 javac를 탐색하는데,
-    // RHEL 등에서 JRE만 설치된 경우(java-21-openjdk, javac 없음) 빌드 실패.
     id("org.openjfx.javafxplugin") version "0.1.0" apply false
 }
 
 group = "com.yours.hsm"
 version = "0.1.0-SNAPSHOT"
 
-// sourceCompatibility / toolchain 을 지정하지 않는다.
-// → Gradle 이 JDK 를 스캔(auto-detect)하지 않고 실행 중인 JVM 을 그대로 사용.
-// 컴파일 타겟은 아래 tasks.withType<JavaCompile> 에서 --release 로 지정.
+// isWindows 를 toolchain 블록 이전에 선언 (먼저 선언해야 블록 안에서 참조 가능)
+val isWindows = System.getProperty("os.name").lowercase().contains("win")
 
-// 최소 JDK 21 요구 (virtual threads, sealed interfaces, pattern switch 등 사용)
-val runningJdkVersion = JavaVersion.current()
-if (runningJdkVersion < JavaVersion.VERSION_21) {
-    throw GradleException("JDK 21 이상이 필요합니다. 현재: $runningJdkVersion")
+java {
+    toolchain {
+        // 기본값: Windows=25(설치된 JDK), Linux=21(설치된 JDK)
+        // -PjavaVersion=N 으로 명시 오버라이드 가능
+        val osDefault = if (isWindows) 25 else 21
+        val v = (project.findProperty("javaVersion") as String?)?.toInt() ?: osDefault
+        languageVersion.set(JavaLanguageVersion.of(v))
+    }
 }
 
 // Luna JSP 경로 — OS별 기본값(Windows/Linux). -PlunaClientPath / -PlunaJspLib 로 오버라이드.
-val isWindows = System.getProperty("os.name").lowercase().contains("win")
 val lunaClientPath: String =
     (project.findProperty("lunaClientPath") as String?)
         ?: if (isWindows) "C:/Program Files/SafeNet/LunaClient" else "/usr/safenet/lunaclient"
@@ -91,16 +90,7 @@ tasks.named<JavaExec>("run") {
     jvmArgs("-Djava.library.path=$lunaJspLib")
 }
 
-// Gradle javaCompiler/toolchain 메커니즘을 완전히 우회.
-// isFork=true + 현재 실행 JVM 의 javac 경로를 직접 지정 → toolchain 선택 코드 미실행.
-// (sourceCompatibility/options.release/--release 모두 Gradle 8+ 에서 toolchain 을 활성화하므로
-//  사용하지 않고, 버전 요구는 위의 GradleException 으로 보장.)
-val javacPath = "${System.getProperty("java.home")}/bin/javac" +
-    (if (isWindows) ".exe" else "")
-
 tasks.withType<JavaCompile> {
-    options.isFork = true
-    options.forkOptions.executable = javacPath
     options.compilerArgs.add("-parameters")
 }
 

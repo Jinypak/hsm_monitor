@@ -32,7 +32,7 @@ goto :eof
 
 :cmd_cli
 echo [vision] Starting HSM Monitor CLI...
-call "%APP_DIR%\gradlew.bat" hsmCli -q
+call "%APP_DIR%\gradlew.bat" hsmCli -q --console=plain -PskipJavafx
 goto :eof
 
 :cmd_test
