@@ -59,9 +59,7 @@ public final class CliApp {
             return;
         }
 
-        System.out.print("  PIN: ");
-        System.out.flush();
-        String pin = readLine().trim();
+        String pin = readPin().trim();
         if (pin.isEmpty()) {
             System.out.println("  PIN cannot be empty.");
             return;
@@ -118,6 +116,71 @@ public final class CliApp {
     private static String readLine() throws Exception {
         String line = IN.readLine();
         return line == null ? "" : line;
+    }
+
+    /**
+     * PIN 을 입력받되 화면에는 {@code *} 로 마스킹한다.
+     * <p>Gradle 경유 실행 시 {@code System.console()} 이 null 이므로,
+     * Linux/macOS 에서는 {@code stty} 로 터미널 에코를 끄고 글자마다 {@code *} 를 출력한다.
+     * TTY 가 없거나(파이프/CI) Windows 면 마스킹 없이 평문 입력으로 폴백한다.
+     */
+    private static String readPin() throws Exception {
+        // 1) 진짜 콘솔이 있으면 readPassword (직접 java 실행 등)
+        java.io.Console console = System.console();
+        if (console != null) {
+            char[] p = console.readPassword("  PIN: ");
+            return p == null ? "" : new String(p);
+        }
+
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+
+        // 2) Linux/macOS: stty 로 에코 끄고 글자마다 '*' 출력
+        if (!isWindows && sttyAvailable()) {
+            try {
+                stty("-echo -icanon min 1");
+                System.out.print("  PIN: ");
+                System.out.flush();
+                StringBuilder sb = new StringBuilder();
+                int ch;
+                while ((ch = IN.read()) != -1) {
+                    if (ch == '\n' || ch == '\r') break;
+                    if (ch == 127 || ch == 8) {           // Backspace/DEL
+                        if (sb.length() > 0) {
+                            sb.deleteCharAt(sb.length() - 1);
+                            System.out.print("\b \b");
+                            System.out.flush();
+                        }
+                        continue;
+                    }
+                    sb.append((char) ch);
+                    System.out.print('*');
+                    System.out.flush();
+                }
+                System.out.println(); // 사용자 Enter 는 에코 안 됨 → 줄바꿈 수동
+                return sb.toString();
+            } finally {
+                stty("echo icanon");   // 터미널 모드 복원
+            }
+        }
+
+        // 3) 폴백 — 평문(보임)
+        System.out.print("  PIN (visible): ");
+        System.out.flush();
+        return readLine();
+    }
+
+    private static boolean sttyAvailable() {
+        try {
+            return new ProcessBuilder("sh", "-c", "command -v stty >/dev/null 2>&1")
+                .start().waitFor() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static void stty(String flags) throws Exception {
+        new ProcessBuilder("sh", "-c", "stty " + flags + " < /dev/tty")
+            .inheritIO().start().waitFor();
     }
 
     private static void printBanner() {
