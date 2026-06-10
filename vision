@@ -104,6 +104,9 @@ case "$CMD" in
     echo -e "${BOLD}vision${RESET} / HSM Monitor ${CYAN}$VER${RESET}"
     echo "  JDK  : $(java -version 2>&1 | head -1)"
     echo "  OS   : $(uname -sr)"
+    echo ""
+    echo -e "  ${CYAN}JDK 버전 지정:${RESET} ./vision start -PjavaVersion=21"
+    echo -e "  ${CYAN}PQC(JDK 내장):${RESET} JDK 25 필요 (HSM PQC는 21에서도 동작)"
     ;;
 
   help|-h|--help)

@@ -12,7 +12,10 @@ version = "0.1.0-SNAPSHOT"
 
 java {
     toolchain {
-        val v = (project.findProperty("javaVersion") as String?)?.toInt() ?: 25
+        // 기본값 21 (LTS). JDK 25의 PQC(ML-DSA/ML-KEM JEP 496/497 내장)를 쓰려면
+        // -PjavaVersion=25 또는 gradle.properties 에 javaVersion=25 로 지정.
+        // JDK 21에서도 LunaProvider가 PQC를 노출하면 HSM 경로로 동일하게 동작한다.
+        val v = (project.findProperty("javaVersion") as String?)?.toInt() ?: 21
         languageVersion.set(JavaLanguageVersion.of(v))
     }
 }
