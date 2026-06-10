@@ -27,7 +27,7 @@ if (runningJdkVersion < JavaVersion.VERSION_21) {
 val isWindows = System.getProperty("os.name").lowercase().contains("win")
 val lunaClientPath: String =
     (project.findProperty("lunaClientPath") as String?)
-        ?: if (isWindows) "C:/Program Files/SafeNet/LunaClient" else "/usr"
+        ?: if (isWindows) "C:/Program Files/SafeNet/LunaClient" else "/usr/safenet/lunaclient"
 
 // Windows: JSP/lib (LunaProvider.jar + LunaAPI.dll), Linux: jsp/lib (LunaProvider.jar + libLunaAPI.so)
 val lunaJspLib: String =
