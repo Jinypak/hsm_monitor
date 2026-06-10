@@ -91,11 +91,17 @@ tasks.named<JavaExec>("run") {
     jvmArgs("-Djava.library.path=$lunaJspLib")
 }
 
+// Gradle javaCompiler/toolchain 메커니즘을 완전히 우회.
+// isFork=true + 현재 실행 JVM 의 javac 경로를 직접 지정 → toolchain 선택 코드 미실행.
+// (sourceCompatibility/options.release/--release 모두 Gradle 8+ 에서 toolchain 을 활성화하므로
+//  사용하지 않고, 버전 요구는 위의 GradleException 으로 보장.)
+val javacPath = "${System.getProperty("java.home")}/bin/javac" +
+    (if (isWindows) ".exe" else "")
+
 tasks.withType<JavaCompile> {
-    // options.release 를 사용하지 않는다 — Gradle 8+ 에서 options.release 설정 시
-    // auto-detect=false 와 무관하게 toolchain 이 자동 활성화되어 javaCompiler 오류 발생.
-    // 대신 컴파일러 인수를 직접 전달한다.
-    options.compilerArgs.addAll(listOf("--release", "21", "-parameters"))
+    options.isFork = true
+    options.forkOptions.executable = javacPath
+    options.compilerArgs.add("-parameters")
 }
 
 // 빌드마다 갱신되는 타임스탬프 — build-info.properties 에 스탬핑되어 GUI 제목에 노출됨
