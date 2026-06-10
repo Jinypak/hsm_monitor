@@ -208,6 +208,21 @@ tasks.register<JavaExec>("hsmCli") {
     standardInput = System.`in`
 }
 
+// vision 스크립트가 CLI 를 java 로 직접 실행할 때 쓰는 환경 출력.
+// Gradle 데몬에는 제어 터미널(/dev/tty)이 없어 PIN 마스킹이 불가하므로,
+// classpath / library path 만 받아 java 를 사용자 터미널에서 직접 띄운다.
+tasks.register("cliEnv") {
+    group = "application"
+    description = "CLI 직접 실행용 classpath/library path 출력 (vision cli 내부 사용)"
+    dependsOn("classes")
+    val cp = sourceSets["main"].runtimeClasspath
+    val lib = lunaJspLib
+    doLast {
+        println("CLI_CLASSPATH=" + cp.asPath)
+        println("CLI_LIBPATH=" + lib)
+    }
+}
+
 tasks.register<JavaExec>("pqcHsmTest") {
     group = "verification"
     description = "실제 HSM 에 ML-DSA/ML-KEM 키 생성→서명/검증·캡슐화 검증 후 정리 (-Pslot -Ppin)"

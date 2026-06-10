@@ -171,7 +171,9 @@ public final class CliApp {
 
     private static boolean sttyAvailable() {
         try {
-            return new ProcessBuilder("sh", "-c", "command -v stty >/dev/null 2>&1")
+            // stty 존재 + /dev/tty 접근(제어 터미널 보유) 둘 다 확인.
+            // Gradle 데몬 등 터미널이 없는 환경이면 false → 평문 폴백(에러 스팸 방지).
+            return new ProcessBuilder("sh", "-c", "stty -a < /dev/tty >/dev/null 2>&1")
                 .start().waitFor() == 0;
         } catch (Exception e) {
             return false;

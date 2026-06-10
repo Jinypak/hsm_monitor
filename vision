@@ -87,9 +87,17 @@ case "$CMD" in
 
   cli)
     info "HSM Monitor CLI 시작... (JDK ${JAVA_MAJOR})"
-    # --console=plain: Gradle 진행률 바(EXECUTING) 제거 — 대화형 입력 방해 방지
-    # -PskipJavafx: JavaFX 플러그인·UI 코드 제외 → JRE만 있는 환경에서도 동작
-    gradlew hsmCli -q --console=plain -PskipJavafx "$@"
+    # Gradle 데몬에는 제어 터미널이 없어 PIN 마스킹이 불가하다.
+    # → Gradle 로는 컴파일/classpath 추출만 하고, java 를 사용자 터미널에서 직접 실행한다.
+    #   (System.console() 이 살아 있어 readPassword 로 PIN 이 마스킹됨)
+    info "컴파일 및 classpath 준비 중..."
+    ENV_OUT=$(gradlew -q --console=plain cliEnv -PskipJavafx "$@") || error "빌드 실패"
+    CP=$(echo "$ENV_OUT" | grep '^CLI_CLASSPATH=' | head -1 | cut -d= -f2-)
+    LIBPATH=$(echo "$ENV_OUT" | grep '^CLI_LIBPATH=' | head -1 | cut -d= -f2-)
+    [[ -z "$CP" ]] && error "classpath 추출 실패. './vision build' 로 빌드 상태를 확인하세요."
+    exec java --enable-native-access=ALL-UNNAMED \
+        -Djava.library.path="$LIBPATH" -Dfile.encoding=UTF-8 -DconsoleLevel=OFF \
+        -cp "$CP" com.yours.hsm.cli.CliApp
     ;;
 
   pqctest)
