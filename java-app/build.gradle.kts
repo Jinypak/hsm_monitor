@@ -92,9 +92,10 @@ tasks.named<JavaExec>("run") {
 }
 
 tasks.withType<JavaCompile> {
-    // --release 21: 도구체인 스캔 없이 현재 JVM 컴파일러로 Java 21 대상 바이트코드 생성
-    options.release.set(21)
-    options.compilerArgs.add("-parameters")
+    // options.release 를 사용하지 않는다 — Gradle 8+ 에서 options.release 설정 시
+    // auto-detect=false 와 무관하게 toolchain 이 자동 활성화되어 javaCompiler 오류 발생.
+    // 대신 컴파일러 인수를 직접 전달한다.
+    options.compilerArgs.addAll(listOf("--release", "21", "-parameters"))
 }
 
 // 빌드마다 갱신되는 타임스탬프 — build-info.properties 에 스탬핑되어 GUI 제목에 노출됨
