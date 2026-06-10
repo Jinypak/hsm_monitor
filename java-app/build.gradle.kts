@@ -184,18 +184,13 @@ tasks.register<JavaExec>("keyImport") {
 
 tasks.register<JavaExec>("hsmCli") {
     group = "application"
-    description = "HSM Monitor 대화형 CLI (Linux headless). -Pslot -Ppin"
+    description = "HSM Monitor 대화형 CLI (Linux headless). 슬롯/PIN은 실행 후 대화형 입력."
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.yours.hsm.cli.CliApp")
     jvmArgs("-Djava.library.path=$lunaJspLib", "--enable-native-access=ALL-UNNAMED",
             "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
             "-DconsoleLevel=OFF")
     standardInput = System.`in`
-    // -Pslot, -Ppin 을 프로그램 인수로 전달
-    val cliArgs = mutableListOf<String>()
-    (project.findProperty("slot") as String?)?.let { cliArgs += listOf("-s", it) }
-    (project.findProperty("pin")  as String?)?.let { cliArgs += listOf("-p", it) }
-    args = cliArgs
 }
 
 tasks.register<JavaExec>("pqcHsmTest") {

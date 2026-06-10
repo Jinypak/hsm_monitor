@@ -31,23 +31,8 @@ call "%APP_DIR%\gradlew.bat" run %1 %2 %3 %4 %5 %6 %7 %8 %9
 goto :eof
 
 :cmd_cli
-set "SLOT=0"
-set "PIN="
-:cli_loop
-if "%~1"=="" goto :cli_run
-if /i "%~1"=="-s"     ( set "SLOT=%~2" & shift & shift & goto :cli_loop )
-if /i "%~1"=="--slot" ( set "SLOT=%~2" & shift & shift & goto :cli_loop )
-if /i "%~1"=="-p"     ( set "PIN=%~2"  & shift & shift & goto :cli_loop )
-if /i "%~1"=="--pin"  ( set "PIN=%~2"  & shift & shift & goto :cli_loop )
-shift
-goto :cli_loop
-:cli_run
-if "!PIN!"=="" (
-    echo [vision] ERROR: -p ^<PIN^> required.  e.g.  vision cli -s 0 -p YOUR_PIN
-    exit /b 1
-)
-echo [vision] Starting HSM Monitor CLI (slot=!SLOT!)...
-call "%APP_DIR%\gradlew.bat" hsmCli -q "-Pslot=!SLOT!" "-Ppin=!PIN!"
+echo [vision] Starting HSM Monitor CLI...
+call "%APP_DIR%\gradlew.bat" hsmCli -q
 goto :eof
 
 :cmd_test
@@ -111,7 +96,7 @@ echo    vision ^<command^> [options]
 echo.
 echo  Commands:
 echo    start                        Run GUI (display required)
-echo    cli   -s ^<slot^> -p ^<pin^>    Interactive HSM CLI (headless)
+echo    cli                          Interactive HSM CLI (slot/PIN entered at runtime)
 echo    test                         Run unit tests
 echo    build                        Build (with tests)
 echo    algolist                     Probe HSM algorithm availability
