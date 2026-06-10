@@ -4,7 +4,10 @@ import java.time.format.DateTimeFormatter
 
 plugins {
     application
-    id("org.openjfx.javafxplugin") version "0.1.0"
+    // CLI 전용 빌드(-PskipJavafx)에서는 JavaFX 플러그인을 적용하지 않는다.
+    // 플러그인이 내부적으로 Gradle toolchain을 사용해 javac를 탐색하는데,
+    // RHEL 등에서 JRE만 설치된 경우(java-21-openjdk, javac 없음) 빌드 실패.
+    id("org.openjfx.javafxplugin") version "0.1.0" apply false
 }
 
 group = "com.yours.hsm"
@@ -39,9 +42,26 @@ repositories {
     mavenCentral()
 }
 
-javafx {
-    version = "21.0.4"
-    modules = listOf("javafx.controls", "javafx.fxml")
+// -PskipJavafx: CLI 전용 빌드 (JRE만 있어도 빌드 가능, UI 코드 제외)
+// GUI 빌드(기본): JavaFX 플러그인 적용, ui/ 포함
+val skipJavafx = project.hasProperty("skipJavafx")
+
+if (!skipJavafx) {
+    apply(plugin = "org.openjfx.javafxplugin")
+    extensions.configure<org.openjfx.gradle.JavaFXOptions>("javafx") {
+        version = "21.0.4"
+        modules = listOf("javafx.controls", "javafx.fxml")
+    }
+}
+
+// CLI 빌드 시 JavaFX 의존 코드(ui/, App.java) 컴파일에서 제외
+sourceSets.main {
+    java {
+        if (skipJavafx) {
+            exclude("**/ui/**")
+            exclude("**/App.java")
+        }
+    }
 }
 
 dependencies {
