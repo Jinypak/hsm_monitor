@@ -86,8 +86,17 @@ case "$CMD" in
     ;;
 
   cli)
-    info "HSM Monitor CLI 시작... (JDK ${JAVA_MAJOR})"
-    gradlew hsmCli -q "$@"
+    SLOT="0"; PIN=""
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        -s|--slot) SLOT="$2"; shift 2 ;;
+        -p|--pin)  PIN="$2";  shift 2 ;;
+        *) break ;;
+      esac
+    done
+    [[ -z "$PIN" ]] && error "-p <PIN> 이 필요합니다. 예: ./vision cli -s 0 -p YOUR_PIN"
+    info "HSM Monitor CLI 시작... (slot=$SLOT, JDK ${JAVA_MAJOR})"
+    gradlew hsmCli -q "-Pslot=$SLOT" "-Ppin=$PIN" "$@"
     ;;
 
   pqctest)
