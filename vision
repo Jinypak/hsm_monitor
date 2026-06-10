@@ -26,24 +26,26 @@ usage() {
   echo "  ./vision <command> [options]"
   echo ""
   echo -e "${BOLD}명령:${RESET}"
-  echo -e "  ${CYAN}start${RESET}                    GUI 실행"
-  echo -e "  ${CYAN}test${RESET}                     단위 테스트 실행"
-  echo -e "  ${CYAN}build${RESET}                    빌드 (테스트 포함)"
-  echo -e "  ${CYAN}algolist${RESET}                 HSM 지원 알고리즘 목록 출력"
+  echo -e "  ${CYAN}start${RESET}                       GUI 실행 (Windows/Linux+display)"
+  echo -e "  ${CYAN}cli${RESET} -s <slot> -p <pin>      HSM 대화형 CLI (Linux headless)"
+  echo -e "  ${CYAN}test${RESET}                        단위 테스트 실행"
+  echo -e "  ${CYAN}build${RESET}                       빌드 (테스트 포함)"
+  echo -e "  ${CYAN}algolist${RESET}                    HSM 지원 알고리즘 목록 출력"
   echo -e "  ${CYAN}pqctest${RESET} -s <slot> -p <pin>  PQC HSM 검증 (ML-DSA/ML-KEM)"
-  echo -e "  ${CYAN}probeLuna${RESET}                LunaProvider 노출 서비스 덤프"
-  echo -e "  ${CYAN}version${RESET}                  버전 정보"
-  echo -e "  ${CYAN}help${RESET}                     이 도움말"
+  echo -e "  ${CYAN}probeluna${RESET}                   LunaProvider 노출 서비스 덤프"
+  echo -e "  ${CYAN}version${RESET}                     버전 정보"
+  echo -e "  ${CYAN}help${RESET}                        이 도움말"
   echo ""
   echo -e "${BOLD}예시:${RESET}"
-  echo "  ./vision start"
+  echo "  ./vision cli -s 0 -p 12341234     # Linux 헤드리스 CLI"
+  echo "  ./vision start                    # GUI (디스플레이 필요)"
   echo "  ./vision test"
   echo "  ./vision algolist"
   echo "  ./vision pqctest -s 0 -p 12341234"
-  echo "  ./vision start -PjavaVersion=21   # JDK 21로 폴백"
+  echo "  (JDK 버전은 설치된 버전으로 자동 감지)"
   echo ""
   echo -e "${BOLD}Luna Client 경로 오버라이드:${RESET}"
-  echo "  ./vision start -PlunaClientPath=/opt/luna/client"
+  echo "  ./vision cli -s 0 -p PIN -PlunaClientPath=/opt/luna/client"
 }
 
 # ── gradlew 래퍼 ─────────────────────────────────────────────
@@ -55,32 +57,43 @@ gradlew() {
 CMD="${1:-help}"
 shift || true
 
+# 설치된 JDK 메이저 버전 자동 감지 — Gradle toolchain 에 전달
+_java_ver() {
+    java -version 2>&1 | grep -oP '(?<=version ")\d+' | head -1
+}
+JAVA_MAJOR=$(_java_ver 2>/dev/null || echo "21")
+JAVA_VER_FLAG="-PjavaVersion=${JAVA_MAJOR}"
+
 case "$CMD" in
 
   start)
-    info "HSM Monitor GUI 시작..."
-    gradlew run "$@"
+    info "HSM Monitor GUI 시작... (JDK ${JAVA_MAJOR})"
+    gradlew run "$JAVA_VER_FLAG" "$@"
     ;;
 
   test)
-    info "단위 테스트 실행..."
-    gradlew test --console=plain "$@"
+    info "단위 테스트 실행... (JDK ${JAVA_MAJOR})"
+    gradlew test --console=plain "$JAVA_VER_FLAG" "$@"
     ok "테스트 완료"
     ;;
 
   build)
-    info "빌드 중..."
-    gradlew build "$@"
+    info "빌드 중... (JDK ${JAVA_MAJOR})"
+    gradlew build "$JAVA_VER_FLAG" "$@"
     ok "빌드 완료"
     ;;
 
   algolist)
-    info "HSM 알고리즘 가용성 조회..."
-    gradlew algoList -q "$@"
+    info "HSM 알고리즘 가용성 조회... (JDK ${JAVA_MAJOR})"
+    gradlew algoList -q "$JAVA_VER_FLAG" "$@"
+    ;;
+
+  cli)
+    info "HSM Monitor CLI 시작... (JDK ${JAVA_MAJOR})"
+    gradlew hsmCli -q "$JAVA_VER_FLAG" "$@"
     ;;
 
   pqctest)
-    # -s <slot> -p <pin> 파싱
     SLOT="0"; PIN=""
     while [[ $# -gt 0 ]]; do
       case "$1" in
@@ -90,8 +103,8 @@ case "$CMD" in
       esac
     done
     [[ -z "$PIN" ]] && error "-p <PIN> 이 필요합니다. 예: ./vision pqctest -s 0 -p YOUR_PIN"
-    info "PQC HSM 검증 (slot=$SLOT)..."
-    gradlew pqcHsmTest -q "-Pslot=$SLOT" "-Ppin=$PIN" "$@"
+    info "PQC HSM 검증 (slot=$SLOT, JDK ${JAVA_MAJOR})..."
+    gradlew pqcHsmTest -q "$JAVA_VER_FLAG" "-Pslot=$SLOT" "-Ppin=$PIN" "$@"
     ;;
 
   probeluna|probeLuna)

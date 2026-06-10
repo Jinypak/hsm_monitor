@@ -12,10 +12,11 @@ version = "0.1.0-SNAPSHOT"
 
 java {
     toolchain {
-        // 기본값 21 (LTS). JDK 25의 PQC(ML-DSA/ML-KEM JEP 496/497 내장)를 쓰려면
-        // -PjavaVersion=25 또는 gradle.properties 에 javaVersion=25 로 지정.
-        // JDK 21에서도 LunaProvider가 PQC를 노출하면 HSM 경로로 동일하게 동작한다.
-        val v = (project.findProperty("javaVersion") as String?)?.toInt() ?: 21
+        // -PjavaVersion=N 명시 > OS 기본값(Windows=25, Linux=21) 순으로 결정.
+        // vision 스크립트가 Linux에서 실제 JDK 버전을 자동 감지해 -PjavaVersion 으로 전달한다.
+        val explicit = (project.findProperty("javaVersion") as String?)?.toInt()
+        val osDefault = if (System.getProperty("os.name").lowercase().contains("win")) 25 else 21
+        val v = explicit ?: osDefault
         languageVersion.set(JavaLanguageVersion.of(v))
     }
 }
@@ -176,6 +177,22 @@ tasks.register<JavaExec>("keyImport") {
     for (k in listOf("slot", "pin")) {
         (project.findProperty(k) as String?)?.let { systemProperty(k, it) }
     }
+}
+
+tasks.register<JavaExec>("hsmCli") {
+    group = "application"
+    description = "HSM Monitor 대화형 CLI (Linux headless). -Pslot -Ppin"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.yours.hsm.cli.CliApp")
+    jvmArgs("-Djava.library.path=$lunaJspLib", "--enable-native-access=ALL-UNNAMED",
+            "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
+            "-DconsoleLevel=OFF")
+    standardInput = System.`in`
+    // -Pslot, -Ppin 을 프로그램 인수로 전달
+    val cliArgs = mutableListOf<String>()
+    (project.findProperty("slot") as String?)?.let { cliArgs += listOf("-s", it) }
+    (project.findProperty("pin")  as String?)?.let { cliArgs += listOf("-p", it) }
+    args = cliArgs
 }
 
 tasks.register<JavaExec>("pqcHsmTest") {
