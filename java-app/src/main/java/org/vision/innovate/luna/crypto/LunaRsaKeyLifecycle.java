@@ -44,7 +44,7 @@ public class LunaRsaKeyLifecycle {
     private static final String DN    = "CN=test, O=test, C=kr";
     private static final int    DAYS  = 365;
 
-    // PKCS#11 RSA 공개 속성 (비밀 아님)
+    // PKCS#11 RSA 공개 속성
     private static final long CKA_MODULUS         = 0x00000120L;
     private static final long CKA_PUBLIC_EXPONENT = 0x00000122L;
 
@@ -90,14 +90,14 @@ public class LunaRsaKeyLifecycle {
         return keyPairRSA;
     }
 
-    // 공개키 조회 (raw — 인증서가 준 그대로. 구버전 Luna 는 getEncoded()=null 가능)
+    // 공개키 
     public PublicKey publicKeyRaw(String alias) throws Exception {
         Certificate c = ks.getCertificate(alias);
         if (c == null) throw new Exception("no cert: " + alias);
         return c.getPublicKey();
     }
 
-    // 공개키 조회 (robust — getEncoded()=null 이면 modulus/exponent 로 표준 키 재구성)
+    // 공개키 조회 (기본 조회 후 값이 비어 있으면 modulus/exponent 로 재구성)
     public PublicKey publicKey(String alias) throws Exception {
         PublicKey pub = publicKeyRaw(alias);
         if (pub.getEncoded() == null && pub instanceof RSAPublicKey r) {
@@ -120,18 +120,18 @@ public class LunaRsaKeyLifecycle {
         return KeyFactory.getInstance("RSA").generatePublic(new RSAPublicKeySpec(mod, exp));
     }
 
-    /** 공개키 세 경로 비교 진단 — raw(인증서 직접) / robust(재구성) / token(CKA 직접). */
+    /** 공개키 세 가지 방법 비교 */
     public void diagnosePublicKey(String alias) throws Exception {
-        byte[] r1 = enc(() -> publicKeyRaw(alias));        // 1. 인증서 getPublicKey()
-        byte[] r2 = enc(() -> publicKey(alias));           // 2. robust(재구성)
-        byte[] r3 = enc(() -> publicKeyFromToken(alias));  // 3. PKCS#11 CKA 직접
+        byte[] r1 = enc(() -> publicKeyRaw(alias));
+        byte[] r2 = enc(() -> publicKey(alias));
+        byte[] r3 = enc(() -> publicKeyFromToken(alias));
 
-        log.info("[1 raw   ] cert.getPublicKey()     : {}", desc(r1));
-        log.info("[2 robust] modulus/exponent 재구성 : {}", desc(r2));
-        log.info("[3 token ] CKA_MODULUS 직접 읽기   : {}", desc(r3));
+        log.info("[1] 기본      : {}", desc(r1));
+        log.info("[2] 재구성    : {}", desc(r2));
+        log.info("[3] 토큰직접  : {}", desc(r3));
 
         byte[] ref = r2 != null ? r2 : r3;                 // 유효한 값 기준 비교
-        log.info("[result  ] 1={} 2={} 3={}{}",
+        log.info("[결과] 1={} 2={} 3={}{}",
                 ok(r1), ok(r2), ok(r3),
                 ref == null ? "" : " | 일치: 1=" + same(r1, ref)
                         + " 2=" + same(r2, ref) + " 3=" + same(r3, ref));
@@ -177,14 +177,14 @@ public class LunaRsaKeyLifecycle {
     }
 
     public static void main(String[] args) throws Exception {
-        // 파라미터
+        
         int    slot  = Integer.getInteger("slot", SLOT);
         String pin   = System.getProperty("pin", PIN);
         String label = System.getProperty("label", LABEL);
 
         LunaRsaKeyLifecycle hsm = hsmConnect(slot, pin);
         hsm.generate(label, BITS, DN, DAYS);
-        hsm.diagnosePublicKey(label);   // raw vs robust 두 경로 비교
+        hsm.diagnosePublicKey(label);   
         log.info("public  = {}", hsm.publicKey(label).getAlgorithm());
         log.info("private = {}", hsm.privateKey(label).getAlgorithm());
         hsm.exportCert(label, label + ".crt");
