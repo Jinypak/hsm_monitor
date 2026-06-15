@@ -5,6 +5,7 @@ import com.safenetinc.luna.provider.LunaCertificateX509;
 import com.safenetinc.luna.provider.LunaProvider;
 
 import java.math.BigInteger;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -12,6 +13,8 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 import java.util.Date;
 
@@ -51,8 +54,12 @@ public class RsaKeySample {
         ks.setKeyEntry(ALIAS, kp.getPrivate(), null, new LunaCertificateX509[]{ cert });
         System.out.println("[2] self-signed cert stored: alias=" + ALIAS + ", serial=" + sn);
 
-        // 3. 공개키 추출 (인증서에서)
+        // 3. 공개키 추출 (인증서에서). 토큰 공개키는 getEncoded() 가 null 일 수 있어 재구성.
         PublicKey pub = ks.getCertificate(ALIAS).getPublicKey();
+        if (pub.getEncoded() == null && pub instanceof RSAPublicKey r) {
+            pub = KeyFactory.getInstance("RSA")
+                    .generatePublic(new RSAPublicKeySpec(r.getModulus(), r.getPublicExponent()));
+        }
         System.out.println("[3] public key (" + pub.getAlgorithm() + ", X.509 DER base64):");
         System.out.println(Base64.getEncoder().encodeToString(pub.getEncoded()));
 

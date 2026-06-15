@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileOutputStream;
 import java.math.BigInteger;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -18,15 +19,17 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 import java.util.Date;
 
 /**
  * Luna HSM RSA 키 생성 샘플.
- 1) 키쌍 생성 + 자체서명 인증서 + 저장
+ 1) RSA 키쌍 생성
  2) 공개키/개인키 조회 
- 3) 인증서 내보내기 (DER/PEM)
- 4) 공개키 내보내기 (X.509 SPKI DER)
+ 3) 인증서 내보내기 
+ 4) 공개키 내보내기 
  */
 public class LunaRsaKeyLifecycle {
 
@@ -73,7 +76,6 @@ public class LunaRsaKeyLifecycle {
         Date startDate = new Date();
         Date endDate = new Date(startDate.getTime() + (long) days * 86_400_000L);
         int slot = LunaSlotManager.getInstance().getDefaultSlot();
-        // 7-인자: 앞 String=서명 알고리즘, 뒤 int=슬롯 → SHA256withRSA 로 서명
         LunaCertificateX509[] chain = { LunaCertificateX509.SelfSign(
                 "SHA256withRSA", keyPairRSA, dn, serialNumber, startDate, endDate, slot) };
 
@@ -86,7 +88,13 @@ public class LunaRsaKeyLifecycle {
     public PublicKey publicKey(String alias) throws Exception {
         Certificate c = ks.getCertificate(alias);
         if (c == null) throw new Exception("no cert: " + alias);
-        return c.getPublicKey();
+        PublicKey pub = c.getPublicKey();
+        // Luna 토큰 공개키는 getEncoded() 가 null 일 수 있음 → modulus/exponent 로 표준 키 재구성
+        if (pub.getEncoded() == null && pub instanceof RSAPublicKey r) {
+            return KeyFactory.getInstance("RSA")
+                    .generatePublic(new RSAPublicKeySpec(r.getModulus(), r.getPublicExponent()));
+        }
+        return pub;
     }
 
     // 개인키 조회
@@ -121,7 +129,7 @@ public class LunaRsaKeyLifecycle {
     }
 
     public static void main(String[] args) throws Exception {
-        // 기본값은 위 상수, -Dslot/-Dpin/-Dlabel 로 오버라이드 가능
+        // 파라미터
         int    slot  = Integer.getInteger("slot", SLOT);
         String pin   = System.getProperty("pin", PIN);
         String label = System.getProperty("label", LABEL);
