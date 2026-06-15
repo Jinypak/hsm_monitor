@@ -14,6 +14,7 @@ if /i "%CMD%"=="test"      goto :cmd_test
 if /i "%CMD%"=="build"     goto :cmd_build
 if /i "%CMD%"=="algolist"  goto :cmd_algolist
 if /i "%CMD%"=="pqctest"   goto :cmd_pqctest
+if /i "%CMD%"=="rsatest"   goto :cmd_rsatest
 if /i "%CMD%"=="probeluna" goto :cmd_probeluna
 if /i "%CMD%"=="version"   goto :cmd_version
 if /i "%CMD%"=="help"      goto :cmd_help
@@ -76,6 +77,31 @@ cd /d "%APP_DIR%"
 call "%APP_DIR%\gradlew.bat" pqcHsmTest -q "-Pslot=!SLOT!" "-Ppin=!PIN!"
 goto :eof
 
+REM [임시] RSA 키 라이프사이클 샘플 테스트
+:cmd_rsatest
+set "SLOT=0"
+set "PIN="
+set "LABEL=rsa_test"
+:rsa_loop
+if "%~1"=="" goto :rsa_run
+if /i "%~1"=="-s"     ( set "SLOT=%~2"  & shift & shift & goto :rsa_loop )
+if /i "%~1"=="--slot" ( set "SLOT=%~2"  & shift & shift & goto :rsa_loop )
+if /i "%~1"=="-p"     ( set "PIN=%~2"   & shift & shift & goto :rsa_loop )
+if /i "%~1"=="--pin"  ( set "PIN=%~2"   & shift & shift & goto :rsa_loop )
+if /i "%~1"=="-l"     ( set "LABEL=%~2" & shift & shift & goto :rsa_loop )
+if /i "%~1"=="--label"( set "LABEL=%~2" & shift & shift & goto :rsa_loop )
+shift
+goto :rsa_loop
+:rsa_run
+if "!PIN!"=="" (
+    echo [vision] ERROR: -p ^<PIN^> required.  e.g.  vision rsatest -s 0 -p YOUR_PIN -l mykey
+    exit /b 1
+)
+echo [vision] [temp] RSA key lifecycle test (slot=!SLOT!, label=!LABEL!)...
+cd /d "%APP_DIR%"
+call "%APP_DIR%\gradlew.bat" rsaLifecycle -q --console=plain "-Pslot=!SLOT!" "-Ppin=!PIN!" "-Plabel=!LABEL!"
+goto :eof
+
 :cmd_probeluna
 echo [vision] Dumping LunaProvider services...
 cd /d "%APP_DIR%"
@@ -101,6 +127,7 @@ echo    test                         Run unit tests
 echo    build                        Build (with tests)
 echo    algolist                     Probe HSM algorithm availability
 echo    pqctest  -s ^<slot^> -p ^<pin^>  PQC HSM verification (ML-DSA/ML-KEM)
+echo    rsatest  -s ^<slot^> -p ^<pin^> -l ^<label^>  [temp] RSA key gen/read/export test
 echo    probeluna                    Dump LunaProvider services
 echo    version                      Version info
 echo    help                         This help

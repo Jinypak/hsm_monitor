@@ -32,6 +32,7 @@ usage() {
   echo -e "  ${CYAN}build${RESET}                       빌드 (테스트 포함)"
   echo -e "  ${CYAN}algolist${RESET}                    HSM 지원 알고리즘 목록 출력"
   echo -e "  ${CYAN}pqctest${RESET} -s <slot> -p <pin>  PQC HSM 검증 (ML-DSA/ML-KEM)"
+  echo -e "  ${CYAN}rsatest${RESET} -s <slot> -p <pin> -l <label>  [임시] RSA 키 생성/조회/내보내기 테스트"
   echo -e "  ${CYAN}probeluna${RESET}                   LunaProvider 노출 서비스 덤프"
   echo -e "  ${CYAN}version${RESET}                     버전 정보"
   echo -e "  ${CYAN}help${RESET}                        이 도움말"
@@ -112,6 +113,22 @@ case "$CMD" in
     [[ -z "$PIN" ]] && error "-p <PIN> 이 필요합니다. 예: ./vision pqctest -s 0 -p YOUR_PIN"
     info "PQC HSM 검증 (slot=$SLOT, JDK ${JAVA_MAJOR})..."
     gradlew pqcHsmTest -q "-Pslot=$SLOT" "-Ppin=$PIN" "$@"
+    ;;
+
+  rsatest)
+    # ── [임시] RSA 키 라이프사이클 샘플 테스트 (LunaRsaKeyLifecycle) ──
+    SLOT="0"; PIN=""; LABEL="rsa_test"
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        -s|--slot)  SLOT="$2";  shift 2 ;;
+        -p|--pin)   PIN="$2";   shift 2 ;;
+        -l|--label) LABEL="$2"; shift 2 ;;
+        *) break ;;
+      esac
+    done
+    [[ -z "$PIN" ]] && error "-p <PIN> 이 필요합니다. 예: ./vision rsatest -s 0 -p YOUR_PIN -l mykey"
+    info "[임시] RSA 키 라이프사이클 테스트 (slot=$SLOT, label=$LABEL)"
+    gradlew rsaLifecycle -q --console=plain "-Pslot=$SLOT" "-Ppin=$PIN" "-Plabel=$LABEL" "$@"
     ;;
 
   probeluna|probeLuna)
