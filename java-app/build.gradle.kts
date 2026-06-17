@@ -252,6 +252,18 @@ tasks.register<JavaExec>("certValidityTest") {
     }
 }
 
+tasks.register<JavaExec>("certReissue") {
+    group = "verification"
+    description = "기존 키 유지하고 인증서만 새 유효기간으로 재발급 (-Pslot -Ppin -Plabel -Pdays)"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("org.vision.innovate.luna.crypto.CertReissueSample")
+    jvmArgs("-Djava.library.path=$lunaJspLib", "--enable-native-access=ALL-UNNAMED",
+            "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8")
+    for (k in listOf("slot", "pin", "label", "days")) {
+        (project.findProperty(k) as String?)?.let { systemProperty(k, it) }
+    }
+}
+
 tasks.register<JavaExec>("certReissueTest") {
     group = "verification"
     description = "기존 키로 인증서 유효기간 재발급(수정) 가능 여부 확인 (-Pslot -Ppin -Plabel)"
