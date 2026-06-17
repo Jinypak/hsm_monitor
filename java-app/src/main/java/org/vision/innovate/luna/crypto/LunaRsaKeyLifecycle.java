@@ -4,8 +4,11 @@ import com.safenetinc.luna.LunaSlotManager;
 import com.safenetinc.luna.LunaTokenObject;
 import com.safenetinc.luna.provider.LunaCertificateX509;
 import com.safenetinc.luna.provider.LunaProvider;
+import com.safenetinc.luna.provider.key.LunaKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.security.Signature;
 
 import java.io.FileOutputStream;
 import java.math.BigInteger;
@@ -100,13 +103,22 @@ public class LunaRsaKeyLifecycle {
         return cert.getPublicKey();
     }
 
-    /** 공개키 조회 (기본값이 비어 있으면 modulus/exponent 로 재구성) */
+    /**
+     * 공개키 조회 (자동).
+     * 1) 인증서에서 그대로 → 2) 값이 비면 modulus/exponent 로 재구성 → 3) 그래도 안 되면 토큰에서 직접.
+     * (구버전 Luna 10.5 는 인증서의 공개키가 null 이라 토큰 직접 경로로 동작)
+     */
     public PublicKey publicKey(String alias) throws Exception {
-        PublicKey publicKey = publicKeyBasic(alias);
-        if (publicKey.getEncoded() == null && publicKey instanceof RSAPublicKey rsaKey) {
-            return buildRsaPublicKey(rsaKey.getModulus(), rsaKey.getPublicExponent());
+        try {
+            PublicKey publicKey = publicKeyBasic(alias);
+            if (publicKey != null && publicKey.getEncoded() != null) return publicKey;
+            if (publicKey instanceof RSAPublicKey rsaKey) {
+                return buildRsaPublicKey(rsaKey.getModulus(), rsaKey.getPublicExponent());
+            }
+        } catch (Exception ignore) {
+            // 인증서 경로 실패 → 토큰 직접
         }
-        return publicKey;
+        return publicKeyFromToken(alias);
     }
 
     /** 공개키 조회 (토큰의 CKA 값으로 직접 재구성) */
@@ -148,9 +160,45 @@ public class LunaRsaKeyLifecycle {
     private static String status(byte[] der)   { return der == null ? "실패" : "성공"; }
     private static boolean matches(byte[] a, byte[] b) { return a != null && Arrays.equals(a, b); }
 
-    /** 개인키 조회 */
+    /**
+     * 개인키 조회 (자동).
+     * 1) KeyStore.getKey → 2) null 이면 토큰에서 직접.
+     * (구버전 Luna 10.5 는 getKey 가 null 이라 토큰 직접 경로로 동작)
+     */
     public PrivateKey privateKey(String alias) throws Exception {
-        return (PrivateKey) keyStore.getKey(alias, null);
+        try {
+            PrivateKey key = (PrivateKey) keyStore.getKey(alias, null);
+            if (key != null) return key;
+        } catch (Exception ignore) {
+            // getKey 실패 → 토큰 직접
+        }
+        return privateKeyFromToken(alias);
+    }
+
+    /**
+     * 개인키 조회 (토큰 직접).
+     * 개인키는 비밀값이라 "재구성"이 불가하다. 대신 토큰의 개인키 객체를 핸들로 가져온다.
+     * 이 핸들로 서명/복호화하면 연산은 HSM 내부에서 수행되고 키 값은 밖으로 나오지 않는다.
+     */
+    public PrivateKey privateKeyFromToken(String alias) throws Exception {
+        int slot = LunaSlotManager.getInstance().getDefaultSlot();
+        LunaKey key = LunaKey.LocateKeyByAlias(alias, slot);
+        if (key instanceof PrivateKey privateKey) return privateKey;
+        throw new Exception("no private key on token: " + alias);
+    }
+
+    /** 개인키(서명)·공개키(검증) 동작 확인 — 두 키가 실제로 쓸 수 있는지 검증 */
+    public boolean signVerifyTest(String alias) throws Exception {
+        byte[] data = "vision sign test".getBytes();
+        Signature signer = Signature.getInstance("SHA256withRSA", provider);
+        signer.initSign(privateKey(alias));
+        signer.update(data);
+        byte[] signature = signer.sign();
+
+        Signature verifier = Signature.getInstance("SHA256withRSA", provider);
+        verifier.initVerify(publicKey(alias));
+        verifier.update(data);
+        return verifier.verify(signature);
     }
 
     /** 인증서 내보내기 (.pem 이면 PEM, 그 외 DER) */
@@ -189,6 +237,7 @@ public class LunaRsaKeyLifecycle {
         hsm.diagnosePublicKey(label);
         log.info("public  = {}", hsm.publicKey(label).getAlgorithm());
         log.info("private = {}", hsm.privateKey(label).getAlgorithm());
+        log.info("sign/verify = {}", hsm.signVerifyTest(label) ? "성공" : "실패");
         hsm.exportCert(label, label + ".crt");
         hsm.exportPublicKey(label, label + "_pub.der");
     }
