@@ -252,6 +252,18 @@ tasks.register<JavaExec>("certValidityTest") {
     }
 }
 
+tasks.register<JavaExec>("certReissueTest") {
+    group = "verification"
+    description = "기존 키로 인증서 유효기간 재발급(수정) 가능 여부 확인 (-Pslot -Ppin -Plabel)"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("org.vision.innovate.luna.crypto.CertReissueTest")
+    jvmArgs("-Djava.library.path=$lunaJspLib", "--enable-native-access=ALL-UNNAMED",
+            "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8")
+    for (k in listOf("slot", "pin", "label")) {
+        (project.findProperty(k) as String?)?.let { systemProperty(k, it) }
+    }
+}
+
 tasks.register<JavaExec>("pqcHsmTest") {
     group = "verification"
     description = "실제 HSM 에 ML-DSA/ML-KEM 키 생성→서명/검증·캡슐화 검증 후 정리 (-Pslot -Ppin)"

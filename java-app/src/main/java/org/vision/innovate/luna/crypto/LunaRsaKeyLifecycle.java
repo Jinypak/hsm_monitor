@@ -106,6 +106,28 @@ public class LunaRsaKeyLifecycle {
         return keyStore.containsAlias(alias);
     }
 
+    public X509Certificate certificate(String alias) throws Exception {
+        return (X509Certificate) keyStore.getCertificate(alias);
+    }
+
+    /**
+     * 기존 키는 그대로 두고 인증서만 새 유효기간으로 재발급(재서명) 후 교체.
+     * (인증서 날짜는 서명 대상이라 기존 인증서의 날짜를 직접 못 고친다 → 같은 키로 새로 서명)
+     */
+    public void reissueCert(String alias, String subjectDn, Date startDate, Date endDate) throws Exception {
+        PublicKey  publicKey  = publicKey(alias);
+        PrivateKey privateKey = privateKey(alias);
+        KeyPair keyPair = new KeyPair(publicKey, privateKey);
+
+        BigInteger serialNumber = new BigInteger(64, new SecureRandom());
+        int slot = LunaSlotManager.getInstance().getDefaultSlot();
+        LunaCertificateX509[] certChain = { LunaCertificateX509.SelfSign(
+                "SHA256withRSA", keyPair, subjectDn, serialNumber, startDate, endDate, slot) };
+
+        keyStore.setKeyEntry(alias, privateKey, null, certChain);  // 같은 키, 인증서만 교체
+        log.info("재발급: alias={}, {} ~ {}", alias, startDate, endDate);
+    }
+
     /** 인증서 유효기간 검사 (현재 시각 기준) */
     public boolean checkValidity(String alias) throws Exception {
         return checkValidityAt(alias, new Date());
