@@ -75,15 +75,21 @@ public class LunaRsaKeyLifecycle {
         return new LunaRsaKeyLifecycle(keyStore, lunaProvider);
     }
 
-    /** RSA 키쌍 생성 + 자체서명 인증서 저장 */
+    /** RSA 키쌍 생성 + 자체서명 인증서 저장 (현재 ~ +days 유효) */
     public KeyPair generate(String alias, int bits, String subjectDn, int days) throws Exception {
+        Date startDate = new Date();
+        Date endDate   = new Date(startDate.getTime() + (long) days * 86_400_000L);
+        return generate(alias, bits, subjectDn, startDate, endDate);
+    }
+
+    /** RSA 키쌍 생성 + 자체서명 인증서 저장 (유효기간 직접 지정) */
+    public KeyPair generate(String alias, int bits, String subjectDn,
+                            Date startDate, Date endDate) throws Exception {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", provider);
         keyPairGenerator.initialize(bits);
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
         BigInteger serialNumber = new BigInteger(64, new SecureRandom());
-        Date startDate = new Date();
-        Date endDate   = new Date(startDate.getTime() + (long) days * 86_400_000L);
         int slot = LunaSlotManager.getInstance().getDefaultSlot();
 
         // 자체서명 인증서 (SHA256withRSA 로 서명)
@@ -92,8 +98,62 @@ public class LunaRsaKeyLifecycle {
 
         // 개인키 + 인증서를 토큰에 함께 저장
         keyStore.setKeyEntry(alias, keyPair.getPrivate(), null, certChain);
-        log.info("saved: alias={}, serial={}, notAfter={}", alias, serialNumber, endDate);
+        log.info("saved: alias={}, notBefore={}, notAfter={}", alias, startDate, endDate);
         return keyPair;
+    }
+
+    public boolean contains(String alias) throws Exception {
+        return keyStore.containsAlias(alias);
+    }
+
+    /** 인증서 유효기간 검사 (현재 시각 기준) */
+    public boolean checkValidity(String alias) throws Exception {
+        return checkValidityAt(alias, new Date());
+    }
+
+    /** 인증서 유효기간 검사 (지정 시각 기준) — 유효하면 true, 만료/미발효면 false */
+    public boolean checkValidityAt(String alias, Date when) throws Exception {
+        X509Certificate cert = (X509Certificate) keyStore.getCertificate(alias);
+        if (cert == null) throw new Exception("no cert: " + alias);
+        try {
+            cert.checkValidity(when);
+            log.info("유효: 검사시각={} (유효기간 {} ~ {})", when, cert.getNotBefore(), cert.getNotAfter());
+            return true;
+        } catch (java.security.cert.CertificateExpiredException e) {
+            log.warn("만료됨: 검사시각={} > notAfter={}", when, cert.getNotAfter());
+            return false;
+        } catch (java.security.cert.CertificateNotYetValidException e) {
+            log.warn("아직 유효 전: 검사시각={} < notBefore={}", when, cert.getNotBefore());
+            return false;
+        }
+    }
+
+    /**
+     * 기존 키/인증서로 유효기간 테스트.
+     * [1] 현재 시각 → 유효 → 서명·검증 동작
+     * [2] 만료 후 시점 → 만료 → 사용 차단
+     * (토큰의 인증서는 건드리지 않고 검사 기준 시각만 바꿔서 두 경우를 보여줌)
+     */
+    public void validityTest(String alias) throws Exception {
+        X509Certificate cert = (X509Certificate) keyStore.getCertificate(alias);
+        if (cert == null) throw new Exception("no cert: " + alias + " (먼저 키를 생성하세요)");
+        log.info("기존 인증서 사용: alias={}, 유효기간 {} ~ {}",
+                alias, cert.getNotBefore(), cert.getNotAfter());
+
+        log.info("=== [1] 현재 시각 (유효 기대) ===");
+        if (checkValidity(alias)) {
+            log.info("  -> 사용 가능, sign/verify = {}", signVerifyTest(alias) ? "성공" : "실패");
+        } else {
+            log.info("  -> 이미 만료되어 사용 불가");
+        }
+
+        Date afterExpiry = new Date(cert.getNotAfter().getTime() + 86_400_000L); // notAfter + 1일
+        log.info("=== [2] 만료 후 시점 (만료 기대) ===");
+        if (!checkValidityAt(alias, afterExpiry)) {
+            log.info("  -> 사용 차단 (만료된 인증서)");
+        } else {
+            log.info("  -> 예상과 다름: 여전히 유효");
+        }
     }
 
     /** 공개키 조회 (기본: 인증서에서 그대로) */

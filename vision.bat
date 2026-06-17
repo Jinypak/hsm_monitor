@@ -15,6 +15,7 @@ if /i "%CMD%"=="build"     goto :cmd_build
 if /i "%CMD%"=="algolist"  goto :cmd_algolist
 if /i "%CMD%"=="pqctest"   goto :cmd_pqctest
 if /i "%CMD%"=="rsatest"   goto :cmd_rsatest
+if /i "%CMD%"=="certtest"  goto :cmd_certtest
 if /i "%CMD%"=="probeluna" goto :cmd_probeluna
 if /i "%CMD%"=="version"   goto :cmd_version
 if /i "%CMD%"=="help"      goto :cmd_help
@@ -100,6 +101,31 @@ if "!PIN!"=="" (
 echo [vision] [temp] RSA key lifecycle test (slot=!SLOT!, label=!LABEL!)...
 cd /d "%APP_DIR%"
 call "%APP_DIR%\gradlew.bat" rsaLifecycle -q --console=plain "-Pslot=!SLOT!" "-Ppin=!PIN!" "-Plabel=!LABEL!"
+goto :eof
+
+REM [임시] 인증서 유효기간 테스트 (기존 키 사용)
+:cmd_certtest
+set "SLOT=0"
+set "PIN="
+set "LABEL=KEY_ALIAS"
+:cert_loop
+if "%~1"=="" goto :cert_run
+if /i "%~1"=="-s"     ( set "SLOT=%~2"  & shift & shift & goto :cert_loop )
+if /i "%~1"=="--slot" ( set "SLOT=%~2"  & shift & shift & goto :cert_loop )
+if /i "%~1"=="-p"     ( set "PIN=%~2"   & shift & shift & goto :cert_loop )
+if /i "%~1"=="--pin"  ( set "PIN=%~2"   & shift & shift & goto :cert_loop )
+if /i "%~1"=="-l"     ( set "LABEL=%~2" & shift & shift & goto :cert_loop )
+if /i "%~1"=="--label"( set "LABEL=%~2" & shift & shift & goto :cert_loop )
+shift
+goto :cert_loop
+:cert_run
+if "!PIN!"=="" (
+    echo [vision] ERROR: -p ^<PIN^> required.  e.g.  vision certtest -s 0 -p YOUR_PIN -l KEY_ALIAS
+    exit /b 1
+)
+echo [vision] [temp] cert validity test (existing key=!LABEL!)...
+cd /d "%APP_DIR%"
+call "%APP_DIR%\gradlew.bat" certValidityTest -q --console=plain "-Pslot=!SLOT!" "-Ppin=!PIN!" "-Plabel=!LABEL!"
 goto :eof
 
 :cmd_probeluna
